@@ -262,6 +262,7 @@ try {
       el.hidden=Math.abs(q.x)>.86||q.y>.85||q.y<-.83;
     });
     badge.textContent=view==='machine'?'已选样瓶 B'+String(telemetry.bottle).padStart(2,'0'):stages[active];
+    badge.hidden=view!=='machine'&&active===0;
     invalid=false;
   }
 
@@ -271,8 +272,7 @@ try {
     invalid=true;
   };
   new ResizeObserver(resize).observe(viewport);resize();draw(0);
-  viewport.classList.add('ready');badge.hidden=false;
-  help.textContent='拖动旋转 · 滚轮缩放 · 点击视角复位';
+  viewport.classList.add('ready');
   buttons.forEach(btn=>{btn.disabled=false;btn.addEventListener('click',()=>select(btn.dataset.view));});
   window.addEventListener('runoff:scene',event=>{telemetry=event.detail;invalid=true;});
   canvas.addEventListener('pointerdown',e=>{
@@ -301,7 +301,7 @@ try {
     e.preventDefault();viewport.classList.remove('ready');badge.hidden=true;help.textContent='三维暂不可用，当前显示布设图';
   });
   canvas.addEventListener('webglcontextrestored',()=>{
-    viewport.classList.add('ready');badge.hidden=false;help.textContent='拖动旋转 · 滚轮缩放 · 点击视角复位';invalid=true;
+    viewport.classList.add('ready');invalid=true;
   });
   let last=0;
   function loop(now){

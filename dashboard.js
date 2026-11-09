@@ -3,7 +3,7 @@
 const CONFIG={endpoint:'',intervalMs:15000,staleMs:60000};
 const $=id=>document.getElementById(id);
 const states=[
- ['待机','停泵，等待出流达到触发量','停靠位'],
+ ['待机',''],
  ['预冲','源水 S → 主管 C → 正转泵 → 预冲罐'],
  ['留样','移臂前停泵，到位后正转，按瓶位定量留样'],
  ['隔离','停泵并切阀，关闭源水 S，确认 C—D 到位'],
@@ -126,8 +126,8 @@ function render(){
   k.setAttribute('aria-label',bottleSummary);
  }
  const last=b.slots.at(-1), id='B'+String(b.id).padStart(2,'0');
- setText('sample-title',id+' · '+(b.analyte??'样瓶')+' · '+(last?num(total(b,'volumeMl'),0)+' mL':'未留样'));
- setText('sample-note',last?'入瓶 T+'+mm(last.minute)+' · 代表 '+num(total(b,'representedVolumeL'),0)+' L':'');
+ setText('sample-title',b.analyte?id+' · '+b.analyte:'样瓶 '+id);
+ setText('sample-note',last?num(total(b,'volumeMl'),0)+' mL · 入瓶 T+'+mm(last.minute)+' · 代表 '+num(total(b,'representedVolumeL'),0)+' L':'');
  const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
  const measures=assays.filter(([,key])=>valid(lab?.[key])).map(([,key,name])=>name+' '+num(lab[key],key==='sscMgL'?0:2)+' mg/L');
  setText('qc',measures.length?measures.join(' · '):last?'待关联化验结果':'该瓶尚无样品');
@@ -146,18 +146,18 @@ function render(){
  }
  setText('coverage',coverage?(model.grouped?'共同覆盖 ':'化验覆盖 ')+num(coverage,0)+' L':'暂无合格区间');
  const windows=b.slots.map(s=>{
-  const item=document.createElement('span');
-  item.textContent='T+'+mm(s.sourceStartMinute)+'–'+mm(s.sourceEndMinute);
-  item.title='有效取水时段 '+formatWindows(s);
-  item.setAttribute('aria-label',item.title);
+  const item=document.createElement('li');
+  item.textContent=sourceTimes(s).map(([start,end])=>'T+'+mm(start)+'–'+mm(end)).join('、');
   return item;
  });
- $('source-windows').replaceChildren(...(windows.length?['取水窗',...windows]:[]));
+ $('source-windows').replaceChildren(...windows);
+ $('sample-windows').hidden=!windows.length;
  $('csv').disabled=!filled.length;
  const stage=pinned??p.stage;
  $('steps').querySelectorAll('button').forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===stage)));
- $('follow').disabled=pinned===null;
- setText('stage',states[stage][0]+'　');setText('route',states[stage][1]);
+ $('follow').hidden=pinned===null;
+ $('route-button').hidden=pinned===null||stage===0;
+ setText('stage',states[stage][0]+'水路');setText('route',states[stage][1]);
  window.runoffSceneState={stage,bottle,levels:bs.map(n=>total(n,'volumeMl')),flow:p.flowLs};
  window.dispatchEvent(new CustomEvent('runoff:scene',{detail:window.runoffSceneState}));
 }
@@ -217,15 +217,24 @@ function init(){
  document.addEventListener('fullscreenchange',()=>{fullscreen.textContent=document.fullscreenElement?'退出全屏':'全屏展示';});
  for(let i=1;i<=8;i++){
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
+  e.setAttribute('aria-haspopup','dialog');
+  e.setAttribute('aria-controls','sample-dialog');
   e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><strong></strong>';
-  e.addEventListener('click',()=>{bottle=i;render();});$('bottles').append(e);
+  e.addEventListener('click',()=>{
+   stop();bottle=i;render();$('sample-dialog').showModal();
+  });
+  $('bottles').append(e);
  }
  states.forEach((s,i)=>{
   const e=document.createElement('button');e.type='button';
   const number=document.createElement('span');number.textContent=String(i+1).padStart(2,'0');
   e.append(number,s[0]);e.addEventListener('click',()=>{stop();pinned=i;render();});$('steps').append(e);
  });
- $('follow').addEventListener('click',()=>{pinned=null;render()});
+ $('route-button').addEventListener('click',()=>$('route-dialog').showModal());
+ $('follow').addEventListener('click',()=>{
+  pinned=null;render();
+  $('steps').querySelector('[aria-pressed=true]').focus();
+ });
  $('seek').addEventListener('input',()=>{stop();pos=Number($('seek').value);render()});
  $('play').addEventListener('click',()=>{
   if(timer!==null){stop();return;}
