@@ -163,7 +163,7 @@ function field() {
   cy(scene,-4.30,1.793,-2.22,.11,.016,mat(0x485d52));
   const routes=[trace(scene,supply,blue,.028),trace(scene,waste,amber,.021),trace(scene,sampleWaste,amber,.021),trace(scene,source,blue,.028)];
   return {scene,routes,waterMap,target:[-.38,.20,.55],size:8.5,width:10.6,
-    eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['本田低位出口',[1.04,.40,3.03]],['留样主机',[3.48,1.48,3.17]]]};
+    eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['本田低位出口',[1.04,.40,3.03],'outlet'],['留样主机',[3.48,1.48,3.17]]]};
 }
 
 function machine() {
@@ -216,8 +216,9 @@ try {
     view=key;config=configs[key];zoom=1;
     spherical.setFromVector3(vec(...config.eye).sub(vec(...config.target)));
     labelEls.splice(0).forEach(el=>el.remove());
-    config.labels.forEach(([name])=>{
+    config.labels.forEach(([name,,anchor])=>{
       const el=document.createElement('span');el.className='model-label';el.textContent=name;
+      if(anchor)el.dataset.anchor=anchor;
       viewport.append(el);labelEls.push(el);
     });
     buttons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.view===key)));

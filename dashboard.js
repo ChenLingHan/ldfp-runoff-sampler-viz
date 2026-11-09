@@ -72,7 +72,9 @@ function svg(tag,props={},label){
  if(label!==undefined)e.textContent=label;return e;
 }
 function chart(points,samples){
- const canvas=$('chart'), x0=36,x1=443,y0=17,y1=144, maxT=points.at(-1).minute||1,
+ const canvas=$('chart'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
+ canvas.setAttribute('viewBox',`0 0 ${width} ${height}`);
+ const x0=36,x1=width-37,y0=18,y1=height-29, maxT=points.at(-1).minute||1,
        maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
        maxR=Math.max(1,Math.ceil(Math.max(...points.map(p=>p.rainMm))));
  const x=m=>x0+(x1-x0)*m/maxT,y=f=>y1-(y1-y0)*f/maxF, yr=r=>y1-(y1-y0)*r/maxR;
@@ -81,11 +83,10 @@ function chart(points,samples){
  for(let i=0;i<=4;i++){
   let yy=y(i*maxF/4);canvas.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#e1e9e1'}),label(x0-7,yy+4,num(i*maxF/4,2),'end'),label(x1+7,yy+4,num(i*maxR/4,1)));
  }
- canvas.append(label(x0,11,'流量 L/s'),label(x1,11,'降雨 mm','end'),label(x1,171,'事件时间 min','end'));
- canvas.append(label(159,11,'▰ 降雨','start','#467c9e'),label(220,11,'━ 流量','start','#247454'),label(281,11,'● 留样','start','#97602e'));
- for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),158,String(Math.round(maxT*i/4)),'middle'));
- const seen=points.slice(0,pos+1), width=5.5;
- for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-width/2,y:yr(p.rainMm),width,height:y1-yr(p.rainMm),fill:'#8cb7d0',opacity:.55,rx:2}));
+ canvas.append(label(x0,11,'流量 L/s'),label(x1,11,'降雨 mm','end'),label(x1,height-2,'事件时间 min','end'));
+ for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),y1+13,String(Math.round(maxT*i/4)),'middle'));
+ const seen=points.slice(0,pos+1),barWidth=5.5;
+ for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),fill:'#8cb7d0',opacity:.55,rx:2}));
  const line=seen.map(p=>x(p.minute)+','+y(p.flowLs)).join(' ');
  if(seen.length>1)canvas.append(svg('polygon',{points:x0+','+y1+' '+line+' '+x(seen.at(-1).minute)+','+y1,fill:'#d5ece2',opacity:.7}),svg('polyline',{points:line,fill:'none',stroke:'#238366','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
  for(const m of samples.flatMap(b=>b.slots.map(s=>s.minute))){
@@ -116,14 +117,14 @@ function render(){
   k.setAttribute('aria-pressed',String(n.id===bottle));
   k.querySelector('b').style.height=(volume/5)+'%';
   k.querySelector('strong').textContent='B'+String(n.id).padStart(2,'0')+(n.analyte?' · '+n.analyte:'');
-  k.querySelector('small').textContent=last?num(volume,0)+' mL · T+'+mm(last.minute):'未留样';
+  k.querySelector('small').textContent=last?num(volume,0)+' mL':'未留样';
  }
  const last=b.slots.at(-1), id='B'+String(b.id).padStart(2,'0');
  setText('sample-title',id+' · '+(b.analyte??'样瓶')+' · '+(last?num(total(b,'volumeMl'),0)+' mL':'未留样'));
- setText('sample-note',last?'代表 '+num(total(b,'representedVolumeL'),0)+' L':'');
+ setText('sample-note',last?'入瓶 T+'+mm(last.minute)+' · 代表 '+num(total(b,'representedVolumeL'),0)+' L':'');
  const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
  const measures=assays.filter(([,key])=>valid(lab?.[key])).map(([,key,name])=>name+' '+num(lab[key],key==='sscMgL'?0:2)+' mg/L');
- setText('qc',measures.length?measures.join(' · '):last?'待关联化验结果':'选择下方瓶号查看留样');
+ setText('qc',measures.length?measures.join(' · '):last?'待关联化验结果':'该瓶尚无样品');
  setText('probe-readings',probe?'水温 '+num(probe.temperatureC)+' °C · 电导率 '+num(probe.conductivityUsCm,0)+' μS/cm':'');
  let coverage=0;
  for(const [element,key] of assays){
@@ -200,6 +201,7 @@ function nextFrame(enteredStage){
  },wait);
 }
 function init(){
+ new ResizeObserver(()=>chart(model.points,visibleBottles())).observe($('chart'));
  const fullscreen=$('fullscreen');
  fullscreen.hidden=!document.fullscreenEnabled;
  fullscreen.addEventListener('click',async()=>{
