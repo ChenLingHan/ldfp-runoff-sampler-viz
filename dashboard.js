@@ -60,7 +60,7 @@ function fieldPreview(){
  return {eventId:'双峰径流',updatedAt:null,points,bottles,grouped:true};
 }
 const preview=fieldPreview();
-let model=preview,pos=0,bottle=1,pinned=null,timer=null,readStatus='preview',asOf=null;
+let model=preview,pos=0,bottle=1,showBottle=false,pinned=null,timer=null,readStatus='preview',asOf=null;
 const valid=(x,a=0,b=Infinity)=>typeof x==='number'&&Number.isFinite(x)&&x>=a&&x<=b;
 const num=(x,p=1)=>valid(x,-1000)?x.toFixed(p):'—';
 const mm=x=>{const s=Math.round(x*60);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
@@ -72,31 +72,37 @@ function svg(tag,props={},label){
  if(label!==undefined)e.textContent=label;return e;
 }
 function chart(points,samples){
- const canvas=$('chart'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
+ const canvas=$('chart'), data=$('chart-data'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
  canvas.setAttribute('viewBox',`0 0 ${width} ${height}`);
- const x0=42,x1=width-42,y0=21,y1=height-34, maxT=points.at(-1).minute||1,
+ const x0=43,x1=width-43,y0=24,y1=height-37, maxT=points.at(-1).minute||1,
        maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
        maxR=Math.max(1,Math.ceil(Math.max(...points.map(p=>p.rainMm))));
  const x=m=>x0+(x1-x0)*m/maxT,y=f=>y1-(y1-y0)*f/maxF, yr=r=>y1-(y1-y0)*r/maxR;
  const label=(x,y,t,anchor='start')=>svg('text',{x,y,'text-anchor':anchor},t);
  const divisions=y1-y0<70?2:4;
- canvas.replaceChildren();
+ data.replaceChildren();
  for(let i=0;i<=divisions;i++){
   const yy=y(i*maxF/divisions);
-  canvas.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'var(--line)'}),
+  data.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,class:i?'chart-gridline':'chart-baseline'}),
    label(x0-7,yy+4,num(i*maxF/divisions,2),'end'),label(x1+7,yy+4,num(i*maxR/divisions,1)));
  }
- canvas.append(label(x0,13,'流量 L/s'),label(x1,13,'降雨 mm','end'),label(x1,height-3,'事件时间 min','end'));
- for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),y1+15,String(Math.round(maxT*i/4)),'middle'));
- const seen=points.slice(0,pos+1),barWidth=5.5;
- for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),fill:'var(--rain)',rx:2}));
+ data.append(label(x0,14,'流量（L/s）'),label(x1,14,'雨量（mm）','end'),label((x0+x1)/2,height-2,'事件时间（min）','middle'));
+ for(let i=0;i<=4;i++)data.append(label(x(maxT*i/4),y1+16,String(Math.round(maxT*i/4)),'middle'));
+ const seen=points.slice(0,pos+1),barWidth=Math.min(12,(x1-x0)/43);
+ const current=seen.at(-1);
  const line=seen.map(p=>x(p.minute)+','+y(p.flowLs)).join(' ');
- if(seen.length>1)canvas.append(svg('polygon',{points:x0+','+y1+' '+line+' '+x(seen.at(-1).minute)+','+y1,fill:'var(--selected)',opacity:.48}),svg('polyline',{points:line,fill:'none',stroke:'var(--flow)','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
- for(const m of samples.flatMap(b=>b.slots.map(s=>s.minute))){
-  const at=seen.reduce((a,p)=>Math.abs(p.minute-m)<Math.abs(a.minute-m)?p:a,seen[0]);
-  canvas.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:3,fill:'var(--sample-dot)',stroke:'var(--paper)','stroke-width':1}));
+ if(seen.length>1)data.append(svg('polygon',{points:x(seen[0].minute)+','+y1+' '+line+' '+x(current.minute)+','+y1,fill:'url(#flow-fill)'}));
+ for(const p of seen)if(p.rainMm>0)data.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),class:'chart-rain',rx:2}));
+ if(seen.length>1)data.append(svg('polyline',{points:line,class:'chart-flow'}));
+ for(const sample of samples)for(const slot of sample.slots){
+  const m=slot.minute, at=seen.reduce((a,p)=>Math.abs(p.minute-m)<Math.abs(a.minute-m)?p:a,seen[0]);
+  const selected=showBottle&&sample.id===bottle;
+  data.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:selected?5:2.8,class:selected?'chart-sample chart-sample-selected':'chart-sample'}));
  }
- const p=seen.at(-1);canvas.append(svg('line',{x1:x(p.minute),x2:x(p.minute),y1:y0,y2:y1,stroke:'var(--flow)','stroke-dasharray':'4 4'}),svg('circle',{cx:x(p.minute),cy:y(p.flowLs),r:3,fill:'var(--flow)'}));
+ if(pos<points.length-1){
+  data.append(svg('line',{x1:x(current.minute),x2:x(current.minute),y1:y0,y2:y1,class:'chart-cursor'}),
+   svg('circle',{cx:x(current.minute),cy:y(current.flowLs),r:3.5,class:'chart-cursor-dot'}));
+ }
 }
 function visibleBottles(){
  const m=model.points[pos].minute;
@@ -109,15 +115,15 @@ const formatWindows=s=>sourceTimes(s).map(([start,end])=>mm(start)+'–'+mm(end)
 function render(){
  const p=model.points[pos],bs=visibleBottles(),b=bs[bottle-1],filled=bs.filter(n=>n.slots.length);
  setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,2));setText('volume',num(p.volumeL,2));
- setText('samples','已留样 '+filled.length+' / 8 瓶');
- setText('plan',model.grouped?'60 L 触发 · 2 组联采 · 2 个备用瓶':'累计出流触发 · 8 个样瓶');
+ $('sample-summary').hidden=showBottle;
+ $('sample-detail').hidden=!showBottle;
  const update=asOf===null?'':new Date(asOf).toLocaleTimeString('zh-CN',{hour12:false})+' · ';
  setText('timestamp',update+model.eventId);
  $('seek').max=model.points.length-1;$('seek').value=pos;setText('cursor','T+'+mm(p.minute));
  chart(model.points,bs);
  for(const n of bs){
   const k=$('b'+n.id), volume=total(n,'volumeMl'), last=n.slots.at(-1);
-  k.setAttribute('aria-pressed',String(n.id===bottle));
+  k.setAttribute('aria-pressed',String(showBottle&&n.id===bottle));
   k.querySelector('b').style.height=(volume/5)+'%';
   const caption='B'+String(n.id).padStart(2,'0')+(n.analyte?' · '+n.analyte:'');
   const bottleSummary=caption+' · '+(last?num(volume,0)+' mL':'未留样');
@@ -147,7 +153,11 @@ function render(){
  setText('coverage',coverage?(model.grouped?'共同覆盖 ':'化验覆盖 ')+num(coverage,0)+' L':'暂无合格区间');
  const windows=b.slots.map(s=>{
   const item=document.createElement('li');
-  item.textContent=sourceTimes(s).map(([start,end])=>'T+'+mm(start)+'–'+mm(end)).join('、');
+  for(const [start,end] of sourceTimes(s)){
+   const segment=document.createElement('span');
+   segment.textContent='T+'+mm(start)+'–'+mm(end);
+   item.append(segment);
+  }
   return item;
  });
  $('source-windows').replaceChildren(...windows);
@@ -217,14 +227,17 @@ function init(){
  document.addEventListener('fullscreenchange',()=>{fullscreen.textContent=document.fullscreenElement?'退出全屏':'全屏展示';});
  for(let i=1;i<=8;i++){
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
-  e.setAttribute('aria-haspopup','dialog');
-  e.setAttribute('aria-controls','sample-dialog');
+  e.setAttribute('aria-controls','sample-detail');
   e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><strong></strong>';
   e.addEventListener('click',()=>{
-   stop();bottle=i;render();$('sample-dialog').showModal();
+   stop();bottle=i;showBottle=true;render();
+   $('sample-detail').scrollIntoView({block:'nearest'});
   });
   $('bottles').append(e);
  }
+ $('show-summary').addEventListener('click',()=>{
+  showBottle=false;render();$('results-heading').focus();
+ });
  states.forEach((s,i)=>{
   const e=document.createElement('button');e.type='button';
   const number=document.createElement('span');number.textContent=String(i+1).padStart(2,'0');
