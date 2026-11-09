@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#15382f">
-<meta name="description" content="清样田守农田径流监测工作台，展示本田出口的出流、采样流程、样瓶和配对水质。">
-<title>清样田守 · 农田径流监测</title>
+<meta name="theme-color" content="#f3f5ef">
+<meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
+<title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./dashboard.css">
 <script defer src="./dashboard.js"></script>
@@ -13,68 +13,73 @@
 </head>
 <body>
 <header class="top"><div class="shell">
-  <div class="brand"><img src="./field-mark.svg" alt=""><div><h1>清样田守</h1><small>农田径流监测工作台</small></div></div>
-  <div class="top-actions"><div class="status" id="status" role="status">功能预览 · 设备未接入</div><button class="button" id="fullscreen" type="button" hidden>全屏展示</button></div>
+  <div class="brand"><img src="./field-mark.svg" alt=""><div><h1>清样田守</h1><span>田块径流工作台</span></div></div>
+  <div class="top-actions">
+    <div class="status" id="status" role="status">方案预览 · 设备未接入</div>
+    <button class="button" id="fullscreen" type="button" hidden>全屏展示</button>
+  </div>
 </div></header>
 <main class="shell dashboard">
-  <section class="metrics" aria-label="事件摘要">
-    <div class="metric"><span class="label">事件累计降雨</span><strong class="val" id="rain">—</strong><span class="sub">mm</span></div>
-    <div class="metric"><span class="label">出口瞬时流量</span><strong class="val" id="flow">—</strong><span class="sub">L/s</span></div>
-    <div class="metric"><span class="label">事件累计出流</span><strong class="val" id="volume">—</strong><span class="sub">L</span></div>
-    <div class="metric"><span class="label">已留样瓶数</span><strong class="val" id="samples">—</strong><span class="sub">瓶</span></div>
-  </section>
-  <div class="board">
-    <div class="column data-column">
-      <section class="card trend" aria-labelledby="trend-title">
-        <div class="hd"><h2 id="trend-title">降雨与出流</h2><div class="legend" aria-label="图例"><span><i style="background:#77aace"></i>降雨</span><span><i style="background:#238366"></i>流量</span><span><i style="background:#a46b30"></i>留样</span></div></div>
-        <div class="sub" id="timestamp">—</div>
-        <svg id="chart" viewBox="0 0 360 185" role="img" aria-label="降雨和出流过程曲线"></svg>
-        <div class="timeline" id="timeline"><button class="button primary" id="play" type="button">播放过程</button><input type="range" id="seek" aria-label="浏览事件时段" min="0" max="0" value="0"><output id="cursor" for="seek">—</output></div>
-      </section>
-      <section class="card" aria-labelledby="record-title">
-        <div class="hd"><h2 id="record-title">留样记录</h2><button class="button" id="csv" type="button">导出 CSV</button></div>
-        <div class="records"><table><thead><tr><th scope="col">瓶号</th><th scope="col">最后留样</th><th scope="col">样量</th><th scope="col">代表水量</th><th scope="col">化验</th></tr></thead><tbody id="rows"></tbody></table></div>
-      </section>
-    </div>
-    <div class="column scene-column">
-      <section class="card scene-card" aria-labelledby="scene-title">
-        <div class="hd"><h2 id="scene-title">田间布设与设备</h2><div class="view-switch" aria-label="三维视角"><button type="button" data-view="field" aria-pressed="true" disabled>田块</button><button type="button" data-view="machine" aria-pressed="false" disabled>主机剖视</button><button type="button" data-view="valve" aria-pressed="false" disabled>阀组</button></div></div>
-        <div class="scene-viewport" id="scene-viewport"><img class="poster" src="./field-poster.webp" alt="田埂内的田块、低位量水段与留样主机"><span class="scene-legend" id="scene-state" hidden></span></div>
-        <div class="scene-tip"><span id="scene-help">三维场景加载中</span><span>本田低位出口 · 岸上留样</span></div>
-      </section>
-      <section class="card" aria-labelledby="control-title">
-        <div class="hd"><h2 id="control-title">电动阀与采样流路</h2><button class="button" id="follow" type="button">跟随过程</button></div>
+  <div class="workbench">
+    <section class="surface scene-card" aria-labelledby="scene-title">
+      <div class="section-head scene-head">
+        <div><p class="eyebrow">02 / 留样设备</p><h2 id="scene-title">田间布设与采样路径</h2></div>
+        <div class="view-switch" aria-label="三维视角"><button type="button" data-view="field" aria-pressed="true" disabled>田块</button><button type="button" data-view="machine" aria-pressed="false" disabled>主机剖视</button><button type="button" data-view="valve" aria-pressed="false" disabled>阀组</button></div>
+      </div>
+      <div class="scene-viewport" id="scene-viewport"><img class="poster" src="./field-poster.webp" alt="本田低位量水段、近口阀组与留样主机"><span class="scene-legend" id="scene-state" hidden></span><span class="scene-help" id="scene-help">三维场景加载中</span></div>
+      <div class="process" aria-label="留样阶段">
+        <div class="process-head"><strong>留样顺序</strong><button class="button subtle" id="follow" type="button">跟随回放</button></div>
         <div class="steps" id="steps"></div>
-        <svg class="flow" id="route-diagram" viewBox="0 0 320 72" role="img" aria-label="阀门源水端 S、主管端 C 和排残液端 D 的连通状态"><line id="sc" x1="49" y1="27" x2="103" y2="27"/><line id="cd" x1="128" y1="42" x2="128" y2="61"/><line id="cp" x1="153" y1="27" x2="205" y2="27"/><line id="po" x1="231" y1="27" x2="264" y2="27"/><rect x="2" y="14" width="48" height="25"/><rect x="103" y="14" width="50" height="25"/><rect x="199" y="14" width="39" height="25"/><rect x="261" y="14" width="57" height="25"/><text x="26" y="30">源水 S</text><text x="128" y="30">阀 / C</text><text x="219" y="30">泵</text><text id="arm" x="290" y="30">停靠位</text><text x="164" y="64">D 排残液</text></svg>
         <div class="route"><strong id="stage"></strong><span id="route"></span></div>
-      </section>
-    </div>
-    <div class="column sample-column">
-      <section class="card" aria-labelledby="bottle-title">
-        <div class="hd"><h2 id="bottle-title">样瓶与水质</h2><span class="sub">8 × 500 mL</span></div>
-        <div class="bottles" id="bottles"></div>
-        <div class="sample-top"><strong id="sample-title">—</strong><small id="sample-note">—</small></div>
-        <div class="reads">
-          <div class="read"><small>水温 · °C</small><strong id="temperature">—</strong></div>
-          <div class="read"><small>电导率 · μS/cm</small><strong id="conductivity">—</strong></div>
-          <div class="read"><small>总氮 TN · mg/L</small><strong id="tn">—</strong></div>
-          <div class="read"><small>总磷 TP · mg/L</small><strong id="tp">—</strong></div>
+      </div>
+    </section>
+    <div class="monitoring">
+      <section class="surface trend" aria-labelledby="trend-title">
+        <div class="section-head">
+          <div><p class="eyebrow">01 / 出口监测</p><h2 id="trend-title">降雨与本田出流</h2></div>
+          <span class="stamp" id="timestamp">—</span>
         </div>
-        <p class="note" id="qc"></p>
-      </section>
-      <section class="card mass" aria-labelledby="mass-title">
-        <div class="hd"><h2 id="mass-title">配对区间养分输出</h2><span class="sub" id="coverage">—</span></div>
-        <div class="reads"><div class="read"><small>总氮输出 · g</small><strong id="mass-n">—</strong></div><div class="read"><small>总磷输出 · g</small><strong id="mass-p">—</strong></div></div>
-        <p class="note">仅汇总化验已关联且有代表水量的区间</p>
-        <div class="context">
-          <div><span>本事件有效增量样</span><strong id="aliquots">—</strong></div>
-          <div><span>留样方式</span><strong>累计出流触发</strong></div>
+        <div class="metrics" aria-label="事件摘要">
+          <div><span>累计降雨</span><strong id="rain">—</strong><small>mm</small></div>
+          <div><span>瞬时流量</span><strong id="flow">—</strong><small>L/s</small></div>
+          <div><span>累计出流</span><strong id="volume">—</strong><small>L</small></div>
         </div>
-        <div class="sample-windows"><h3>所选样瓶取水时段</h3><ul id="source-windows"></ul></div>
+        <svg id="chart" viewBox="0 0 480 174" role="img" aria-label="降雨、出流与留样时点"></svg>
+        <div class="timeline" id="timeline">
+          <button class="button primary" id="play" type="button">回放事件</button>
+          <input type="range" id="seek" aria-label="事件时段" min="0" max="0" value="0">
+          <output id="cursor" for="seek">—</output>
+          <select id="pace" aria-label="回放速率"><option value="guide">讲解</option><option value="fast">快览</option></select>
+        </div>
+      </section>
+      <section class="surface sample" aria-labelledby="sample-heading">
+        <div class="section-head">
+          <div><p class="eyebrow">03 / 样品检测</p><h2 id="sample-heading">配对化验与区间输出</h2></div>
+          <span class="stamp" id="coverage">—</span>
+        </div>
+        <div class="result-grid">
+          <div><span>悬沙输出 · g</span><strong id="mass-s">—</strong></div>
+          <div><span>总氮输出 · g</span><strong id="mass-n">—</strong></div>
+          <div><span>总磷输出 · g</span><strong id="mass-p">—</strong></div>
+        </div>
+        <div class="detail">
+          <div class="detail-line"><strong id="sample-title">—</strong><span id="sample-note"></span></div>
+          <div class="detail-line"><span id="qc">—</span><span id="probe-readings"></span></div>
+          <div id="source-windows" class="windows" aria-label="所选瓶取水时段"></div>
+        </div>
       </section>
     </div>
   </div>
-  <footer class="foot"><span>清样田守 · 农田径流低扰动流量比例智能留样装备</span><span>现场探头读数与实验室化验结果分别记录</span></footer>
+  <section class="surface records-card" aria-labelledby="record-title">
+    <div class="section-head records-head">
+      <div><h2 id="record-title">留样台账</h2><span class="sub" id="plan">—</span></div>
+      <div class="record-actions"><span class="sub" id="samples">—</span><button class="button" id="csv" type="button">导出 CSV</button></div>
+    </div>
+    <div class="records">
+      <div class="bottle-grid" id="bottles" aria-label="八个样瓶"></div>
+    </div>
+  </section>
+  <footer class="foot"><span>本田低位出口 · 近口隔离排废 · 瓶号追溯</span><span>负荷仅汇总有对应水量且化验合格的区间</span></footer>
   <noscript>请启用 JavaScript 以浏览监测工作台</noscript>
 </main>
 </body>
