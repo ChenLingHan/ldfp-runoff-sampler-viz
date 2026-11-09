@@ -74,26 +74,29 @@ function svg(tag,props={},label){
 function chart(points,samples){
  const canvas=$('chart'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
  canvas.setAttribute('viewBox',`0 0 ${width} ${height}`);
- const x0=36,x1=width-37,y0=18,y1=height-29, maxT=points.at(-1).minute||1,
+ const x0=42,x1=width-42,y0=21,y1=height-34, maxT=points.at(-1).minute||1,
        maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
        maxR=Math.max(1,Math.ceil(Math.max(...points.map(p=>p.rainMm))));
  const x=m=>x0+(x1-x0)*m/maxT,y=f=>y1-(y1-y0)*f/maxF, yr=r=>y1-(y1-y0)*r/maxR;
- const label=(x,y,t,anchor='start',fill='#536961')=>svg('text',{x,y,fill,'font-size':11,'text-anchor':anchor},t);
+ const label=(x,y,t,anchor='start')=>svg('text',{x,y,'text-anchor':anchor},t);
+ const divisions=y1-y0<70?2:4;
  canvas.replaceChildren();
- for(let i=0;i<=4;i++){
-  let yy=y(i*maxF/4);canvas.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#e1e9e1'}),label(x0-7,yy+4,num(i*maxF/4,2),'end'),label(x1+7,yy+4,num(i*maxR/4,1)));
+ for(let i=0;i<=divisions;i++){
+  const yy=y(i*maxF/divisions);
+  canvas.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'var(--line)'}),
+   label(x0-7,yy+4,num(i*maxF/divisions,2),'end'),label(x1+7,yy+4,num(i*maxR/divisions,1)));
  }
- canvas.append(label(x0,11,'流量 L/s'),label(x1,11,'降雨 mm','end'),label(x1,height-2,'事件时间 min','end'));
- for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),y1+13,String(Math.round(maxT*i/4)),'middle'));
+ canvas.append(label(x0,13,'流量 L/s'),label(x1,13,'降雨 mm','end'),label(x1,height-3,'事件时间 min','end'));
+ for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),y1+15,String(Math.round(maxT*i/4)),'middle'));
  const seen=points.slice(0,pos+1),barWidth=5.5;
- for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),fill:'#8cb7d0',opacity:.55,rx:2}));
+ for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),fill:'var(--rain)',rx:2}));
  const line=seen.map(p=>x(p.minute)+','+y(p.flowLs)).join(' ');
- if(seen.length>1)canvas.append(svg('polygon',{points:x0+','+y1+' '+line+' '+x(seen.at(-1).minute)+','+y1,fill:'#d5ece2',opacity:.7}),svg('polyline',{points:line,fill:'none',stroke:'#238366','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
+ if(seen.length>1)canvas.append(svg('polygon',{points:x0+','+y1+' '+line+' '+x(seen.at(-1).minute)+','+y1,fill:'var(--selected)',opacity:.48}),svg('polyline',{points:line,fill:'none',stroke:'var(--flow)','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
  for(const m of samples.flatMap(b=>b.slots.map(s=>s.minute))){
   const at=seen.reduce((a,p)=>Math.abs(p.minute-m)<Math.abs(a.minute-m)?p:a,seen[0]);
-  canvas.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:2.8,fill:'#a46b30',stroke:'#fff','stroke-width':1}));
+  canvas.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:3,fill:'var(--sample-dot)',stroke:'var(--paper)','stroke-width':1}));
  }
- const p=seen.at(-1);canvas.append(svg('line',{x1:x(p.minute),x2:x(p.minute),y1:y0,y2:y1,stroke:'#438776','stroke-dasharray':'4 4'}),svg('circle',{cx:x(p.minute),cy:y(p.flowLs),r:3,fill:'#17654e'}));
+ const p=seen.at(-1);canvas.append(svg('line',{x1:x(p.minute),x2:x(p.minute),y1:y0,y2:y1,stroke:'var(--flow)','stroke-dasharray':'4 4'}),svg('circle',{cx:x(p.minute),cy:y(p.flowLs),r:3,fill:'var(--flow)'}));
 }
 function visibleBottles(){
  const m=model.points[pos].minute;
@@ -116,8 +119,11 @@ function render(){
   const k=$('b'+n.id), volume=total(n,'volumeMl'), last=n.slots.at(-1);
   k.setAttribute('aria-pressed',String(n.id===bottle));
   k.querySelector('b').style.height=(volume/5)+'%';
-  k.querySelector('strong').textContent='B'+String(n.id).padStart(2,'0')+(n.analyte?' · '+n.analyte:'');
-  k.querySelector('small').textContent=last?num(volume,0)+' mL':'未留样';
+  const caption='B'+String(n.id).padStart(2,'0')+(n.analyte?' · '+n.analyte:'');
+  const bottleSummary=caption+' · '+(last?num(volume,0)+' mL':'未留样');
+  k.querySelector('strong').textContent=caption;
+  k.title=bottleSummary;
+  k.setAttribute('aria-label',bottleSummary);
  }
  const last=b.slots.at(-1), id='B'+String(b.id).padStart(2,'0');
  setText('sample-title',id+' · '+(b.analyte??'样瓶')+' · '+(last?num(total(b,'volumeMl'),0)+' mL':'未留样'));
@@ -211,7 +217,7 @@ function init(){
  document.addEventListener('fullscreenchange',()=>{fullscreen.textContent=document.fullscreenElement?'退出全屏':'全屏展示';});
  for(let i=1;i<=8;i++){
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
-  e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><span><strong></strong><small></small></span>';
+  e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><strong></strong>';
   e.addEventListener('click',()=>{bottle=i;render();});$('bottles').append(e);
  }
  states.forEach((s,i)=>{

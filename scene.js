@@ -32,9 +32,9 @@ function texture(base, marks, count, repeat) {
   return map;
 }
 
-function daylight(background) {
+function daylight() {
   const scene = new T.Scene();
-  scene.background = new T.Color(background);
+  scene.background = new T.Color(0xf0f5ed);
   scene.add(new T.HemisphereLight(0xf2fbff,0x8f8168,2));
   const sun = new T.DirectionalLight(0xfff2d7,2.55);
   sun.position.set(-5,10,5);
@@ -114,8 +114,8 @@ function trace(scene, points, color, radius=.018) {
 }
 
 function field() {
-  const scene=daylight(0xe0eadf);
-  floor(scene,38,0xcbd8bf);
+  const scene=daylight();
+  floor(scene,38,0xe2eadc);
   const earth=mat(0x9e774d,{map:texture('#af9478',['#746353','#dbc3a7','#a5896c','#93826e'],5900,[4,4]),roughness:.97});
   const bank=mat(0x8b8f59,{map:texture('#b0ac89',['#777952','#c9c3a0','#8f9874'],5300,[3,3]),roughness:.94});
   const ridge=mat(0x876640,{map:earth.map,roughness:.98});
@@ -167,8 +167,8 @@ function field() {
 }
 
 function machine() {
-  const scene=daylight(0xe3ebe3);
-  floor(scene,26,0xcbd6c9);
+  const scene=daylight();
+  floor(scene,26,0xe2eadc);
   host(scene,'open');
   const fills=[];
   for(let i=0;i<8;i++){
@@ -184,8 +184,8 @@ function machine() {
 }
 
 function valves() {
-  const scene=daylight(0xe4ebe4);
-  floor(scene,14,0xcdd8cd);
+  const scene=daylight();
+  floor(scene,14,0xe2eadc);
   valve(scene);
   const supply=[[-1.22,.215,0],[-.95,.215,0],[.20,.215,0],[1.22,.215,0]];
   const discharge=[[1.22,.215,0],[.46,.215,0],[.04,.215,.10],[0,.215,.45],[0,.215,1.06]];

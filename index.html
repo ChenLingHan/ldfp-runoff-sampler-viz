@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#17342b">
+<meta name="theme-color" content="#fdfefa">
 <meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./dashboard.css?v=workbench-2">
-<script defer src="./dashboard.js?v=workbench-2"></script>
-<script type="module" src="./scene.js?v=workbench-2"></script>
+<link rel="stylesheet" href="./dashboard.css?v=workbench-3">
+<script defer src="./dashboard.js?v=workbench-3"></script>
+<script type="module" src="./scene.js?v=workbench-3"></script>
 </head>
 <body>
 <header class="top"><div class="shell">
@@ -60,8 +60,11 @@
           <button class="button" id="csv" type="button">导出 CSV</button>
         </div>
         <section class="records" aria-labelledby="record-title">
-          <div class="subhead"><h3 id="record-title">留样台账</h3><span class="sub" id="samples">—</span></div>
-          <p class="plan sub" id="plan">—</p>
+          <div class="subhead records-head">
+            <h3 id="record-title">留样台账</h3>
+            <span class="plan sub" id="plan">—</span>
+            <span class="sub" id="samples">—</span>
+          </div>
           <div class="bottle-grid" id="bottles" role="group" aria-label="选择样瓶查看化验结果"></div>
           <div class="detail">
             <div class="detail-line"><strong id="sample-title">—</strong><span id="sample-note"></span></div>
