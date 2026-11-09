@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12332d">
+<title>清样田守 · 农田径流监测</title>
+<style>
+:root{color-scheme:light;--ink:#172d28;--muted:#536961;--forest:#12332d;--accent:#1f785d;--edge:#d8e4da;--paper:#f1f5ef;--white:#fff;--blue:#276b9c;--gold:#9a5b21}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #b96a24;outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.5}.wrap{width:min(1190px,calc(100% - 44px));margin:auto}header{background:#fff;border-bottom:1px solid var(--edge)}.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:66px}.brand{font-size:20px;font-weight:800;letter-spacing:.08em}.brand small{font-size:12px;letter-spacing:.07em;color:var(--muted);margin-left:12px;font-weight:600}.status{border:1px solid var(--edge);border-radius:100px;padding:6px 12px;color:var(--muted);font-size:12px;white-space:nowrap}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#ad793b;margin-right:7px}.status.live:before{background:#238a5d}
+.hero{position:relative;overflow:hidden;margin:23px 0 18px;border-radius:18px;background:#12332d;color:#f3faf0;padding:27px 34px;min-height:190px;display:flex;align-items:center;justify-content:space-between;gap:16px}.hero .plot{width: min(36%,360px);flex:none}.hero h1{margin:6px 0 9px;font-size:clamp(25px,3.8vw,42px);letter-spacing:.025em;line-height:1.18}.hero p{margin:0;color:#d2e2d2}.eyebrow{font-size:11px;color:#b9d8be;letter-spacing:.23em;font-weight:800}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.metric,.card{background:#fff;border:1px solid var(--edge);border-radius:14px}.metric{padding:13px 17px;min-width:0}.metric .val{font-variant-numeric:tabular-nums;font-size:30px;font-weight:760;line-height:1.25;display:block;margin:4px 0}.label,.sub{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:16px;align-items:start}.stack{display:grid;gap:16px}.card{min-width:0;padding:17px 20px}.hd{display:flex;gap:9px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px}.hd h2{font-size:17px;letter-spacing:.01em;margin:0}.hd select,.button{font-size:12px;background:#fff;border:1px solid var(--edge);border-radius:8px;color:var(--ink);padding:7px 10px}.button:hover,.hd select:hover{border-color:var(--accent)}.button.primary{background:var(--forest);color:#fff;border-color:var(--forest)}#chart{width:100%;height:auto;display:block;overflow:visible;aspect-ratio:640/250}.timeline{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;border-top:1px solid var(--edge);padding-top:12px}.timeline input{width:100%;accent-color:var(--accent)}.timeline output{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}.legend{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:4px 0 10px}.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.bottles{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}.bottle{border:1px solid var(--edge);background:#f7faf6;border-radius:8px;padding:8px 2px 5px;color:var(--muted);font-size:11px;display:grid;place-items:center;gap:3px}.bottle[aria-pressed=true]{border-color:#39785f;background:#deeee3;color:#133b2d}.glass{width:15px;height:21px;border:1px solid currentColor;border-radius:3px 3px 5px 5px;position:relative;overflow:hidden}.glass:before{content:"";position:absolute;left:3px;right:3px;top:2px;height:1px;background:currentColor}.glass b{position:absolute;bottom:0;left:0;right:0;background:#83bea8}.sample-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;margin:11px 0}.sample-top strong{font-size:14px}.sample-top small{font-size:11px;color:var(--muted)}.reads{display:grid;grid-template-columns:1fr 1fr;gap:6px}.read{border:1px solid var(--edge);border-radius:7px;padding:6px 8px}.read strong{display:block;font-size:16px;font-variant-numeric:tabular-nums}.read small{font-size:10px;color:var(--muted)}.note{margin:9px 0 0;color:var(--muted);font-size:11px}.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:9px 0}.steps button{background:#f7faf6;border:1px solid var(--edge);border-radius:8px;padding:7px 3px;font-size:12px;color:var(--muted);white-space:normal}.steps button[aria-pressed=true]{background:#deeee3;color:#153b2e;border-color:#428267;font-weight:bold}.paths{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}.route{border-radius:8px;background:#f2f7f1;padding:8px 11px;font-size:13px;min-height:39px}.route strong{color:var(--accent)}.flow{width:100%;height:auto;display:block;max-height:86px}.flow .wet{stroke:#258475}.flow .drain{stroke:#b0692e}.flow line{stroke:#c9d5cb;stroke-width:4}.flow text{fill:#2d443a;font-size:11px;text-anchor:middle}.flow rect{fill:#f6f9f6;stroke:#9eb5a9;rx:4}
+.records{overflow:auto}.records table{width:100%;border-collapse:collapse;text-align:left;font-size:12px;white-space:nowrap}.records th,.records td{padding:7px 9px;border-bottom:1px solid #e5ece5}.records th{background:#f4f8f3;font-weight:650;color:#30483d}.records tr:last-child td{border-bottom:0}.records tbody tr.selected{background:#edf6ed}footer{padding:18px 0 25px;font-size:12px;color:var(--muted)}footer a{color:#1b654e}noscript{display:block;margin:20px 0}
+@media(max-width:840px){.grid{grid-template-columns:1fr}.hero{padding:25px}.hero .plot{width:33%}.reads{grid-template-columns:repeat(4,1fr)}}@media(max-width:540px){.wrap{width:calc(100% - 24px)}.brand small,.hero .plot{display:none}.hero{min-height:0;margin:12px 0;padding:19px}.hero p{font-size:13px}.bar{min-height:56px}.metrics{grid-template-columns:repeat(2,1fr);gap:8px}.metric{padding:9px 11px}.metric .val{font-size:24px}.card{padding:12px}.reads{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap bar"><div class="brand">清样田守<small>FIELD RUNOFF MONITOR</small></div><div class="status" id="status" role="status">功能预览 · 设备未接入</div></div></header>
+<main class="wrap">
+<section class="hero" aria-labelledby="title"><div><div class="eyebrow">单田块 · 单降雨事件</div><h1 id="title">农田径流监测</h1><p>把田块排水过程、留样瓶和水质读数关联起来</p></div>
+<svg class="plot" viewBox="0 0 340 132" role="img" aria-label="田埂围合田块，径流从本田低位出口流经测流与取样组件">
+<path d="M6 76 145 17 293 64 154 123Z" fill="#456d52" stroke="#a0bc91" stroke-width="4"/><path d="m32 76 114-49 120 39-113 47Z" fill="#759768"/>
+<g fill="none" stroke="#a6bd85" stroke-width="3"><path d="m42 79 115-48m-92 56 115-49m-91 56 116-49m-93 57 116-49m-92 57 116-49"/></g>
+<g stroke="#bde6da" fill="none" stroke-width="2" stroke-linecap="round"><path d="m98 63 47 16 62 5 62-8m-58-21 17 13 41 8 20 10 20-1"/><path d="m261 72 8 4-9 3m41 2 8 4-8 5"/></g>
+<rect x="290" y="60" width="36" height="26" rx="3" fill="#e4eee3"/><path d="M296 69h24v8h-24z" fill="#24765e"/><path d="M77 45V20h15v8H77" stroke="#e4eee3" fill="none" stroke-width="3"/>
+</svg></section>
+<section class="metrics" aria-label="事件摘要">
+<div class="metric"><span class="label">事件累计降雨</span><strong class="val" id="rain">—</strong><span class="sub">雨量计 · mm</span></div>
+<div class="metric"><span class="label">出口瞬时流量</span><strong class="val" id="flow">—</strong><span class="sub">本田低位出口 · L/s</span></div>
+<div class="metric"><span class="label">事件累计出流</span><strong class="val" id="volume">—</strong><span class="sub">用于安排定量留样 · L</span></div>
+<div class="metric"><span class="label">已留样 / 容量</span><strong class="val" id="samples">—</strong><span class="sub">按瓶号关联分析结果</span></div>
+</section>
+<div class="grid">
+<div class="stack">
+<section class="card" aria-labelledby="trend-title"><div class="hd"><h2 id="trend-title">降雨与田块出流</h2><span class="sub" id="timestamp">—</span></div><svg id="chart" viewBox="0 0 640 250" role="img" aria-label="降雨和出流过程曲线"></svg><div class="legend sub"><span><i style="background:#70a6c7"></i>时段降雨</span><span><i style="background:#238366"></i>出口流量</span><span><i style="background:#a46b30"></i>留样时点</span></div><div class="timeline" id="timeline"><button class="button primary" id="play" type="button">播放过程</button><input type="range" id="seek" aria-label="浏览事件时段" min="0" max="0" value="0"><output id="cursor" for="seek">—</output></div></section>
+<section class="card" aria-labelledby="record-title"><div class="hd"><h2 id="record-title">留样记录</h2><button class="button" id="csv" type="button">导出 CSV</button></div><div class="records"><table><thead><tr><th>瓶号</th><th>最后留样</th><th>样量</th><th>代表水量</th><th>化验</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+</div>
+<div class="stack">
+<section class="card" aria-labelledby="bottle-title"><div class="hd"><h2 id="bottle-title">样瓶与水质</h2><span class="sub">8 × 500 mL</span></div><div class="bottles" id="bottles"></div><div class="sample-top"><strong id="sample-title">—</strong><small id="sample-note">—</small></div>
+<div class="reads"><div class="read"><small>水温 · °C</small><strong id="temperature">—</strong></div><div class="read"><small>电导率 · μS/cm</small><strong id="conductivity">—</strong></div><div class="read"><small>总氮 TN · mg/L</small><strong id="tn">—</strong></div><div class="read"><small>总磷 TP · mg/L</small><strong id="tp">—</strong></div></div><p class="note" id="qc">水温和电导率来自瓶内探头；总氮、总磷读取配对化验记录</p></section>
+<section class="card" aria-labelledby="control-title"><div class="hd"><h2 id="control-title">电动阀与采样流路</h2><button class="button" id="follow" type="button">跟随过程</button></div><div class="steps" id="steps"></div>
+<svg class="flow" id="route-diagram" viewBox="0 0 320 72" role="img" aria-label="阀门源水端 S、主管端 C 和排残液端 D 的连通状态"><line id="sc" x1="49" y1="27" x2="103" y2="27"/><line id="cd" x1="128" y1="42" x2="128" y2="61"/><line id="cp" x1="153" y1="27" x2="205" y2="27"/><line id="po" x1="231" y1="27" x2="264" y2="27"/><rect x="2" y="14" width="48" height="25"/><rect x="103" y="14" width="50" height="25"/><rect x="199" y="14" width="39" height="25"/><rect x="261" y="14" width="57" height="25"/><text x="26" y="30">源水 S</text><text x="128" y="30">阀 / C</text><text x="219" y="30">泵</text><text id="arm" x="290" y="30">停靠位</text><text x="164" y="64">D 排残液</text></svg>
+<div class="route"><strong id="stage"></strong><span id="route"></span></div><p class="note">切换阀位或移动出液臂前先停泵；反馈异常时停机并记录</p></section>
+<section class="card" aria-labelledby="mass-title"><div class="hd"><h2 id="mass-title">配对区间养分输出</h2><span class="sub" id="coverage">—</span></div><div class="reads"><div class="read"><small>总氮输出 · g</small><strong id="mass-n">—</strong></div><div class="read"><small>总磷输出 · g</small><strong id="mass-p">—</strong></div></div><p class="note">仅汇总已有化验浓度及代表水量的区间</p></section>
+</div>
+</div>
+<noscript>请启用 JavaScript 以浏览监测界面</noscript>
+</main>
+<footer class="wrap">清样田守 · 农田径流低扰动流量比例智能留样装备</footer>
+<script>
+'use strict';
+// Set endpoint to a CORS-enabled HTTPS endpoint for field telemetry. See README.
+const CONFIG={endpoint:'',intervalMs:15000,staleMs:60000};
+const $=id=>document.getElementById(id);
+const states=[
+ ['待机','停泵，等待出流达到触发量','停靠位'],
+ ['预冲','S—C 连通，D 关闭；泵正转，预冲水进预冲罐','预冲罐'],
+ ['留样','S—C 连通，D 关闭；移臂到位后正转留样','目标瓶'],
+ ['隔离','先停泵并回停靠位，再关闭 S、确认 C—D 到位','停靠位'],
+ ['清管','S 隔离，C—D 连通；反转把残液送入独立容器','干态入口']
+];
+const rates=[0,0,0,.09,.17,.29,.43,.58,.64,.53,.41,.31,.28,.33,.46,.53,.43,.34,.26,.18,.11,.06,.03,.01,0];
+const rain=[0,0.5,1.3,1.8,2.5,3.1,2.2,1.6,.8,.4,.2,0,.2,.6,1.2,1.3,.6,.2,0,0,0,0,0,0,0];
+function fieldPreview(){
+ const points=[],bottles=Array.from({length:8},(_,i)=>({id:i+1,slots:[],probe:null,lab:null}));
+ let cum=0,depth=0,threshold=40,lastQ=0,lastStart=-Infinity,count=0;
+ for(let i=0;i<=576;i++){
+  const sec=i*5, k=Math.min(23,Math.floor(sec/120)), fraction=(sec-k*120)/120;
+  const q=rates[k]+fraction*(rates[k+1]-rates[k]);
+  const mm=sec&&sec%120===0?rain[sec/120]:0;
+  depth+=mm;if(i)cum+=(q+lastQ)*2.5;lastQ=q;
+  if(cum>=threshold){
+   threshold+=40;
+   if(q>=.267&&sec-lastStart>=30&&count<24&&sec+20<=2880){
+    lastStart=sec;bottles[Math.floor(count++/3)].slots.push({minute:(sec+20)/60,sourceStartMinute:(sec+8)/60,sourceEndMinute:(sec+16)/60,volumeMl:100,representedVolumeL:40});
+   }
+  }
+  const age=sec-lastStart;
+  points.push({minute:sec/60,flowLs:q,rainMm:mm,rainTotalMm:depth,volumeL:cum,stage:age<11?1:age<20?2:age<25?3:age<30?4:0});
+ }
+ bottles[0].probe={temperatureC:20.6,conductivityUsCm:236,quality:'valid'};
+ bottles[0].lab={tnMgL:2.41,tpMgL:.24,status:'released'};
+ bottles[1].lab={tnMgL:1.87,tpMgL:.17,status:'released'};
+ return {eventId:'PLOT-A / R01',updatedAt:null,points,bottles};
+}
+const preview=fieldPreview();
+let model=preview,pos=0,bottle=1,pinned=null,timer=null,readStatus='preview',asOf=null;
+const valid=(x,a=0,b=Infinity)=>typeof x==='number'&&Number.isFinite(x)&&x>=a&&x<=b;
+const num=(x,p=1)=>valid(x,-1000)?x.toFixed(p):'—';
+const mm=x=>{const s=Math.round(x*60);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
+const total=(b,key)=>b.slots.reduce((a,s)=>a+s[key],0);
+function setText(id,v){$(id).textContent=v}
+function svg(tag,props={},label){
+ const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+ for(const [k,v] of Object.entries(props))e.setAttribute(k,v);
+ if(label!==undefined)e.textContent=label;return e;
+}
+function chart(points,samples){
+ const canvas=$('chart'), x0=45,x1=589,y0=20,y1=215, maxT=points.at(-1).minute||1,
+       maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
+       maxR=Math.max(1,Math.ceil(Math.max(...points.map(p=>p.rainMm))));
+ const x=m=>x0+(x1-x0)*m/maxT,y=f=>y1-(y1-y0)*f/maxF, yr=r=>y1-(y1-y0)*r/maxR;
+ const label=(x,y,t,anchor='start',fill='#536961')=>svg('text',{x,y,fill,'font-size':11,'text-anchor':anchor},t);
+ canvas.replaceChildren();
+ for(let i=0;i<=4;i++){
+  let yy=y(i*maxF/4);canvas.append(svg('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#e1e9e1'}),label(x0-7,yy+4,num(i*maxF/4,2),'end'),label(x1+7,yy+4,num(i*maxR/4,1)));
+ }
+ canvas.append(label(x0,12,'流量 L/s'),label(x1,12,'降雨 mm','end'),label(x1,244,'事件时间 min','end'));
+ for(let i=0;i<=4;i++)canvas.append(label(x(maxT*i/4),233,String(Math.round(maxT*i/4)),'middle'));
+ const seen=points.slice(0,pos+1), width=10;
+ for(const p of seen)if(p.rainMm>0)canvas.append(svg('rect',{x:x(p.minute)-width/2,y:yr(p.rainMm),width,height:y1-yr(p.rainMm),fill:'#8cb7d0',opacity:.55,rx:2}));
+ const line=seen.map(p=>x(p.minute)+','+y(p.flowLs)).join(' ');
+ if(seen.length>1)canvas.append(svg('polygon',{points:x0+','+y1+' '+line+' '+x(seen.at(-1).minute)+','+y1,fill:'#d5ece2',opacity:.7}),svg('polyline',{points:line,fill:'none',stroke:'#238366','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
+ for(const m of samples.flatMap(b=>b.slots.map(s=>s.minute))){
+  const at=seen.reduce((a,p)=>Math.abs(p.minute-m)<Math.abs(a.minute-m)?p:a,seen[0]);
+  canvas.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:4,fill:'#a46b30',stroke:'#fff','stroke-width':1}));
+ }
+ const p=seen.at(-1);canvas.append(svg('line',{x1:x(p.minute),x2:x(p.minute),y1:y0,y2:y1,stroke:'#438776','stroke-dasharray':'4 4'}),svg('circle',{cx:x(p.minute),cy:y(p.flowLs),r:4,fill:'#17654e'}));
+}
+function visibleBottles(){
+ const m=model.points[pos].minute;
+ return model.bottles.map(b=>{const slots=b.slots.filter(s=>s.minute<=m);const full=slots.length>0&&slots.length===b.slots.length;
+  return {...b,slots,probe:full?b.probe:null,lab:full?b.lab:null};});
+}
+function row(a){const tr=document.createElement('tr');for(const c of a){const td=document.createElement('td');td.textContent=c;tr.append(td);}return tr;}
+function render(){
+ const p=model.points[pos],bs=visibleBottles(),b=bs[bottle-1], filled=bs.filter(b=>b.slots.length);
+ setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,2));setText('volume',num(p.volumeL,0));setText('samples',filled.length+' / 8');
+ const update=asOf===null?'':new Date(asOf).toLocaleTimeString('zh-CN',{hour12:false})+' 更新 · ';
+ setText('timestamp',update+model.eventId+' · T+'+mm(p.minute));
+ $('seek').max=model.points.length-1;$('seek').value=pos;setText('cursor','T+'+mm(p.minute));
+ chart(model.points,bs);
+ for(const n of bs){const k=$('b'+n.id);k.setAttribute('aria-pressed',String(n.id===bottle));k.querySelector('b').style.height=(total(n,'volumeMl')/5)+'%';}
+ setText('sample-title','B'+String(b.id).padStart(2,'0')+' · '+(b.slots.length?num(total(b,'volumeMl'),0)+' mL':'未留样'));
+ setText('sample-note',b.slots.length?'对应 '+num(total(b,'representedVolumeL'),0)+' L 出流':'');
+ const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
+ setText('temperature',num(probe?.temperatureC));setText('conductivity',num(probe?.conductivityUsCm,0));setText('tn',num(lab?.tnMgL,2));setText('tp',num(lab?.tpMgL,2));
+ setText('qc',b.slots.length?((probe?'探头读数已关联':'无有效探头读数')+' · '+(lab?'化验结果已关联':'总氮、总磷待化验')):'样瓶达到浸没条件后，方可读取已安装的探头');
+ const paired=filled.filter(n=>n.lab?.status==='released');
+ const pairedL=paired.reduce((a,n)=>a+total(n,'representedVolumeL'),0);
+ setText('coverage',paired.length?'化验已覆盖 '+num(pairedL,0)+' L':'暂无可计算区间');
+ for(const [id,key] of [['mass-n','tnMgL'],['mass-p','tpMgL']]){
+  setText(id,paired.length?num(paired.reduce((a,n)=>a+n.lab[key]*total(n,'representedVolumeL')/1000,0),3):'—');
+ }
+ const lines=filled.map(n=>{const el=row(['B'+String(n.id).padStart(2,'0'),'T+'+mm(n.slots.at(-1).minute),num(total(n,'volumeMl'),0)+' mL',num(total(n,'representedVolumeL'),0)+' L',n.lab?.status==='released'?'已关联':'待关联']);if(n.id===bottle)el.className='selected';return el;});
+ $('rows').replaceChildren(...(lines.length?lines:[row(['—','—','—','—','—'])]));
+ $('csv').disabled=!filled.length;
+ const stage=pinned??p.stage;
+ $('steps').querySelectorAll('button').forEach((btn,i)=>btn.setAttribute('aria-pressed',String(i===stage)));
+ $('follow').disabled=pinned===null;setText('stage',states[stage][0]+'　');setText('route',states[stage][1]);setText('arm',states[stage][2]);
+ const classes={sc:stage===1||stage===2?'wet':'',cd:stage>=3?'drain':'',cp:stage===1||stage===2?'wet':stage===4?'drain':'',po:stage===1||stage===2?'wet':stage===4?'drain':''};
+ Object.entries(classes).forEach(([id,c])=>$(id).setAttribute('class',c));
+}
+function validate(v){
+ if(!v||typeof v.eventId!=='string'||!v.eventId.trim()||v.eventId.length>60||!Number.isFinite(Date.parse(v.updatedAt))||!Array.isArray(v.points)||!v.points.length||v.points.length>1440||!Array.isArray(v.bottles)||v.bottles.length!==8)throw Error('invalid envelope');
+ let t=-1,w=-1,r=-1;
+ for(const p of v.points){if(!p||!valid(p.minute)||p.minute<=t||!valid(p.volumeL)||p.volumeL<w||!valid(p.rainTotalMm)||p.rainTotalMm<r||!valid(p.rainMm)||!valid(p.flowLs)||!Number.isInteger(p.stage)||!valid(p.stage,0,4))throw Error('invalid series');t=p.minute;w=p.volumeL;r=p.rainTotalMm;}
+ v.bottles.forEach((b,i)=>{
+  if(!b||b.id!==i+1||!Array.isArray(b.slots)||b.slots.length>3||b.slots.some((s,k)=>!s||!valid(s.minute,0,t)||!valid(s.sourceStartMinute,0,s.minute)||!valid(s.sourceEndMinute,s.sourceStartMinute,s.minute)||!valid(s.volumeMl,.01,500)||!valid(s.representedVolumeL,.01)||(k>0&&s.minute<=b.slots[k-1].minute))||total(b,'volumeMl')>500)throw Error('invalid bottle');
+  if(b.probe!=null&&(typeof b.probe!=='object'||!['valid','invalid'].includes(b.probe.quality)||(b.probe.quality==='valid'&&(!valid(b.probe.temperatureC,-20,70)||!valid(b.probe.conductivityUsCm)))))throw Error('invalid probe');
+  if(b.lab!=null&&(typeof b.lab!=='object'||!['pending','released'].includes(b.lab.status)||(b.lab.status==='released'&&(!valid(b.lab.tnMgL)||!valid(b.lab.tpMgL)))))throw Error('invalid laboratory result');
+ });return v;
+}
+function connectStatus(kind){
+ readStatus=kind;$('status').classList.toggle('live',kind==='live');
+ setText('status',({preview:'功能预览 · 设备未接入',loading:'正在读取设备',live:'已接入 · 15 秒刷新',stale:'最近读数 · 更新延迟',error:'设备数据不可用'})[kind]);
+}
+async function poll(){
+ try{
+  const url=new URL(CONFIG.endpoint,location.href);
+  if(url.protocol!=='https:')throw Error('HTTPS required');
+  const response=await fetch(url,{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw Error('gateway unavailable');
+  const data=validate(await response.json()), when=Date.parse(data.updatedAt);
+  if(when>Date.now()+CONFIG.staleMs||(asOf!==null&&when<asOf))throw Error('timestamp out of order');
+  model=data;asOf=when;pos=model.points.length-1;
+  connectStatus(Date.now()-when>CONFIG.staleMs?'stale':'live');render();
+ }catch{connectStatus(asOf===null?'error':'stale');}
+ finally{setTimeout(poll,CONFIG.intervalMs);}
+}
+function stop(){if(timer!==null)clearInterval(timer);timer=null;setText('play','播放过程')}
+function init(){
+ for(let i=1;i<=8;i++){const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><span>B'+String(i).padStart(2,'0')+'</span>';e.addEventListener('click',()=>{bottle=i;render()});$('bottles').append(e);}
+ states.forEach((s,i)=>{const e=document.createElement('button');e.type='button';e.textContent=s[0];e.addEventListener('click',()=>{pinned=i;render()});$('steps').append(e);});
+ $('follow').addEventListener('click',()=>{pinned=null;render()});
+ $('seek').addEventListener('input',()=>{stop();pos=Number($('seek').value);render()});
+ $('play').addEventListener('click',()=>{if(timer!==null){stop();return;}if(pos===model.points.length-1)pos=0;pinned=null;render();setText('play','暂停');timer=setInterval(()=>{if(pos<model.points.length-1){pos=Math.min(model.points.length-1,pos+4);render()}else stop()},120)});
+ $('csv').addEventListener('click',()=>{
+  const escape=v=>'"'+String(v).replace(/^[=+@-]/,"'"+String(v)[0]).replaceAll('"','""')+'"';
+  const lines=[['数据来源','事件','瓶号','最后留样时刻','源水时段','样量 mL','代表水量 L','水温 °C','电导率 μS/cm','TN mg/L','TP mg/L','化验状态']];
+  for(const b of visibleBottles().filter(b=>b.slots.length)){
+   const p=b.probe?.quality==='valid'?b.probe:null,l=b.lab?.status==='released'?b.lab:null;
+   lines.push([readStatus==='preview'?'功能预览（设备未接入）':'设备数据',model.eventId,b.id,mm(b.slots.at(-1).minute),b.slots.map(s=>mm(s.sourceStartMinute)+'—'+mm(s.sourceEndMinute)).join(' / '),total(b,'volumeMl'),total(b,'representedVolumeL'),p?.temperatureC??'',p?.conductivityUsCm??'',l?.tnMgL??'',l?.tpMgL??'',l?'已关联':'待关联']);
+  }
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+lines.map(l=>l.map(escape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download='qingyang-bottles.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ });
+ if(CONFIG.endpoint){$('timeline').hidden=true;$('timeline').style.display='none';connectStatus('loading');poll();}
+ else {pos=preview.points.length-1;render();}
+}
+init();
+</script>
+</body>
+</html>
