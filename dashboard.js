@@ -80,12 +80,38 @@ function svg(tag,props={},label){
  for(const [k,v] of Object.entries(props))e.setAttribute(k,v);
  if(label!==undefined)e.textContent=label;return e;
 }
+let plotScale;
+function nearestPoint(points,minute){
+ let lo=0,hi=points.length-1;
+ while(lo<hi){
+  const mid=Math.floor((lo+hi)/2);
+  if(points[mid].minute<minute)lo=mid+1;
+  else hi=mid;
+ }
+ return lo>0&&minute-points[lo-1].minute<=points[lo].minute-minute?lo-1:lo;
+}
+function chartPoint(event){
+ if(!plotScale)return null;
+ const bounds=$('chart').getBoundingClientRect();
+ const {x0,x1,y0,y1,width,height,maxT}=plotScale;
+ const x=(event.clientX-bounds.left)*width/bounds.width;
+ const y=(event.clientY-bounds.top)*height/bounds.height;
+ if(x<x0||x>x1||y<y0||y>y1)return null;
+ return nearestPoint(model.points,(x-x0)/(x1-x0)*maxT);
+}
+function hideChartTip(){
+ $('chart-tip').hidden=true;
+ $('chart-guide').setAttribute('hidden','');
+}
 function chart(points,samples){
  const canvas=$('chart'), data=$('chart-data'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
  canvas.setAttribute('viewBox',`0 0 ${width} ${height}`);
- const x0=43,x1=width-43,y0=24,y1=height-37, maxT=points.at(-1).minute||1,
+ const maxT=points.at(-1).minute||1,
        maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
        maxR=Math.max(1,Math.ceil(Math.max(...points.map(p=>p.rainMm))));
+ const x0=Math.max(43,num(maxF,2).length*7+9),x1=width-Math.max(43,num(maxR,1).length*7+9),y0=24,y1=height-37;
+ plotScale={x0,x1,y0,y1,width,height,maxT};
+ hideChartTip();
  const x=m=>x0+(x1-x0)*m/maxT,y=f=>y1-(y1-y0)*f/maxF, yr=r=>y1-(y1-y0)*r/maxR;
  const label=(x,y,t,anchor='start')=>svg('text',{x,y,'text-anchor':anchor},t);
  const divisions=y1-y0<70?2:4;
@@ -110,7 +136,7 @@ function chart(points,samples){
  for(const p of seen)if(p.rainMm>0)data.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),class:'chart-rain',rx:2}));
  if(seen.length>1)data.append(svg('polyline',{points:line,class:'chart-flow'}));
  for(const sample of samples)for(const slot of sample.slots){
-  const m=slot.minute, at=seen.reduce((a,p)=>Math.abs(p.minute-m)<Math.abs(a.minute-m)?p:a,seen[0]);
+  const m=slot.minute, at=seen[nearestPoint(seen,m)];
   const selected=showBottle&&sample.id===bottle;
   data.append(svg('circle',{cx:x(m),cy:y(at.flowLs),r:selected?5:2.8,class:selected?'chart-sample chart-sample-selected':'chart-sample'}));
  }
@@ -130,6 +156,9 @@ const formatWindows=s=>sourceTimes(s).map(([start,end])=>mm(start)+'–'+mm(end)
 function render(){
  const p=model.points[pos],bs=visibleBottles(),b=bs[bottle-1],filled=bs.filter(n=>n.slots.length);
  setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,3));setText('volume',num(p.volumeL,2));
+ const peak=model.points.slice(0,pos+1).reduce((a,point)=>point.flowLs>a.flowLs?point:a);
+ setText('peak-flow',num(peak.flowLs,3)+' L/s · T+'+mm(peak.minute));
+ setText('filled-count',filled.length+' / '+bs.length+' 瓶');
  const flowStatus=p.flowLs>limits.max?'超出拟测流上限，停采':p.flowLs<limits.measureMin?'低于拟测流下限':p.flowLs<limits.pumpMin?'处于拟测流范围内，低于启泵流量':'流量达到启泵范围，仍需核验浸没和设备状态';
  setText('flow-condition','当前流量 '+num(p.flowLs,3)+' L/s · '+flowStatus);
  $('sample-summary').hidden=showBottle;
@@ -138,17 +167,21 @@ function render(){
  $('bottles').classList.toggle('grouped',model.grouped);
  const update=asOf===null?'':new Date(asOf).toLocaleTimeString('zh-CN',{hour12:false})+' · ';
  setText('timestamp',update+model.eventId);
- $('seek').max=model.points.length-1;$('seek').value=pos;setText('cursor','T+'+mm(p.minute));
- $('seek').setAttribute('aria-valuetext','事件开始后 '+mm(p.minute));
+ const duration=mm(model.points.at(-1).minute);
+ $('seek').max=model.points.length-1;$('seek').value=pos;
+ setText('cursor','T+'+mm(p.minute));setText('duration',duration);
+ $('seek').setAttribute('aria-valuetext','事件开始后 '+mm(p.minute)+'，总时长 '+duration);
  chart(model.points,bs);
  for(const n of bs){
   const k=$('b'+n.id), volume=total(n,'volumeMl'), last=n.slots.at(-1);
   k.setAttribute('aria-pressed',String(showBottle&&n.id===bottle));
   k.querySelector('.glass-liquid').style.height=(volume/BOTTLE_CAPACITY_ML*100)+'%';
   k.dataset.empty=String(!last);
+  k.dataset.partial=String(model.grouped&&Boolean(last)&&n.slots.length<3);
   const amount=last?num(volume,0)+' mL':'空瓶';
   const purpose=n.analyte??'';
-  const bottleSummary=k.querySelector('strong').textContent+(purpose?' · '+purpose:'')+' · '+amount;
+  const rounds=model.grouped&&last?' · 已入瓶 '+n.slots.length+' / 3 次':'';
+  const bottleSummary=k.querySelector('strong').textContent+(purpose?' · '+purpose:'')+' · '+amount+rounds;
   k.querySelector('.bottle-purpose').textContent=purpose;
   k.querySelector('.bottle-volume').textContent=amount;
   k.title=bottleSummary;
@@ -156,7 +189,12 @@ function render(){
  }
  const last=b.slots.at(-1), id='B'+String(b.id).padStart(2,'0');
  setText('sample-title',b.analyte?id+' · '+b.analyte:'样瓶 '+id);
- setText('sample-note',last?'样量 '+num(total(b,'volumeMl'),0)+' mL · 末次入瓶 T+'+mm(last.minute)+' · 候选水量 '+num(total(b,'representedVolumeL'),0)+' L':'');
+ $('bottle-facts').hidden=!last;
+ if(last){
+  setText('bottle-amount',num(total(b,'volumeMl'),0)+' mL');
+  setText('bottle-arrival','T+'+mm(last.minute));
+  setText('bottle-represented',num(total(b,'representedVolumeL'),0)+' L');
+ }
  const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
  const measures=assays.filter(([,key])=>valid(lab?.[key])).map(([,key,name])=>name+' '+num(lab[key],key==='sscMgL'?0:2)+' mg/L');
  const assayStatus=model.grouped&&last&&b.slots.length<3?'已留样 '+b.slots.length+' / 3 轮':last?'待关联化验结果':'该瓶尚无样品';
@@ -177,6 +215,8 @@ function render(){
  setText('coverage',coverage?(model.grouped?'共同覆盖 ':'总氮覆盖 ')+num(coverage,0)+' L':'暂无合格区间');
  const coverageRatio=p.volumeL>0?coverage/p.volumeL*100:0;
  $('coverage-fill').style.width=Math.min(100,coverageRatio)+'%';
+ $('coverage-track').setAttribute('aria-valuenow',num(Math.min(100,coverageRatio),2));
+ $('coverage-track').setAttribute('aria-valuetext',num(coverageRatio,2)+'%');
  setText('coverage-context',p.volumeL>0?'占当前累计出流 '+num(coverageRatio,2)+'%':'尚无累计出流');
  const windows=b.slots.map(s=>{
   const item=document.createElement('li');
@@ -245,6 +285,29 @@ function nextFrame(enteredStage){
 }
 function init(){
  new ResizeObserver(()=>chart(model.points,visibleBottles())).observe($('chart'));
+ const chartElement=$('chart');
+ chartElement.toggleAttribute('data-seekable',!CONFIG.endpoint);
+ chartElement.addEventListener('pointermove',event=>{
+  const index=chartPoint(event);
+  if(index===null||index>pos||timer!==null){hideChartTip();return;}
+  const p=model.points[index],{x0,x1,y0,y1,maxT}=plotScale;
+  const x=x0+(x1-x0)*p.minute/maxT;
+  const guide=$('chart-guide');
+  guide.setAttribute('x1',x);guide.setAttribute('x2',x);
+  guide.setAttribute('y1',y0);guide.setAttribute('y2',y1);
+  guide.removeAttribute('hidden');
+  setText('chart-tip-time','T+'+mm(p.minute));
+  setText('chart-tip-values',num(p.flowLs,3)+' L/s · 累计雨量 '+num(p.rainTotalMm)+' mm');
+  $('chart-tip').style.setProperty('--tip-x',x+'px');
+  $('chart-tip').hidden=false;
+ });
+ chartElement.addEventListener('pointerleave',hideChartTip);
+ chartElement.addEventListener('click',event=>{
+  if(CONFIG.endpoint)return;
+  const index=chartPoint(event);
+  if(index===null)return;
+  stop();pos=index;render();
+ });
  const fullscreen=$('fullscreen');
  fullscreen.hidden=!document.fullscreenEnabled;
  fullscreen.addEventListener('click',async()=>{

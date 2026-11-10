@@ -55,6 +55,12 @@ function floor(scene, size, color) {
   surface.castShadow=false;
 }
 
+function frameBox(min,max){
+  const corners=[];
+  for(const x of [min[0],max[0]])for(const y of [min[1],max[1]])for(const z of [min[2],max[2]])corners.push(vec(x,y,z));
+  return corners;
+}
+
 function crops(scene) {
   const coordinates=[];
   for(let row=0;row<12;row++)for(let plant=0;plant<12;plant++){
@@ -134,6 +140,7 @@ function field() {
   const concrete=mat(0xaab4ab,{roughness:.96});
   b(scene,1.02,.02,3.25,.70,.15,1.54,concrete);
   for(const x of [.71,1.33])b(scene,x,.17,3.25,.055,.31,1.54,steel);
+  for(const x of [.71,1.33])for(const z of [2.58,3.93])cy(scene,x,.332,z,.024,.024,steel,6);
   const waterMap=texture('#92bac2',['#b9d9d7','#7fabb9','#accfd2'],2100,[1,2.2]);
   const water=mat(0x63a5b8,{map:waterMap,roughness:.16,metalness:.22});
   const trough=b(scene,1.02,.098,3.25,.54,.026,1.49,water);
@@ -155,15 +162,18 @@ function field() {
   pipe(scene,source,.024,mat(0x345957));
   pipe(scene,waste,.018,mat(0x9c5c2e));
   pipe(scene,sampleWaste,.018,mat(0x9c5c2e));
-  for(const x of [2.65,3.26]){
+  for(const [x,cap] of [[2.65,0x6a5644],[3.26,0x486a60]]){
     b(scene,x,.245,4.11,.42,.54,.39,mat(0xe1e3d6,{roughness:.58}));
-    cy(scene,x,.541,4.11,.084,.075,mat(0x535a53));
+    cy(scene,x,.541,4.11,.084,.075,mat(cap),16);
+    b(scene,x,.325,4.312,.24,.12,.013,mat(cap));
   }
   cy(scene,-4.30,.91,-2.22,.028,1.58,steel);
   cy(scene,-4.30,1.71,-2.22,.14,.15,steel);
   cy(scene,-4.30,1.793,-2.22,.11,.016,mat(0x485d52));
   const routes=[trace(scene,supply,blue,.028),trace(scene,waste,amber,.021),trace(scene,sampleWaste,amber,.021),trace(scene,source,blue,.028)];
-  return {scene,routes,waterMap,target:[-.38,.32,.55],size:7.35,width:10.6,
+  const outletFrame=frameBox([.62,-.17,2.24],[4.66,1.63,4.4]);
+  const frame=[...frameBox([-5.06,-.17,-2.83],[2.88,.61,2.83]),...outletFrame,vec(-4.30,1.87,-2.22)];
+  return {scene,routes,waterMap,frame,outletFrame,target:[-.38,.32,.55],
     eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['低位出口 · 短量水段',[1.04,.40,3.03],'outlet'],['留样主机',[3.48,1.48,3.17]]]};
 }
 
@@ -208,7 +218,15 @@ try {
   canvas.setAttribute('aria-label','三维设备场景，方向键旋转，加减键缩放');
   viewport.prepend(canvas);
   const camera=new T.OrthographicCamera(-1,1,1,-1,.05,100);
-  const configs={field:field(),machine:machine(),valve:valves()};
+  const fieldView=field();
+  const configs={
+    field:fieldView,
+    outlet:{...fieldView,frame:fieldView.outletFrame,target:[2.60,.55,3.38],eye:[6.0,3.5,9.7],
+      labels:[['短量水段',[.89,.22,3.40],'outlet'],['近口三通阀',[1.49,.50,3.48],'valve-close'],
+        ['残液罐',[2.65,.55,4.13],'tank-left'],['预冲罐',[3.26,.55,4.13],'tank-right'],['留样主机',[3.48,1.48,3.17]]]},
+    machine:machine(),
+    valve:valves()
+  };
   const labelEls=[];
   const spherical=new T.Spherical();
   let view='field',config,zoom=1,drag=null,invalid=true,telemetry=window.runoffSceneState??{stage:0,bottle:1,levels:[],flow:0};
@@ -234,13 +252,26 @@ try {
   function draw(time){
     const w=viewport.clientWidth,h=viewport.clientHeight;
     if(!w||!h)return;
-    const a=w/h,half=Math.max(config.size,config.width/a)/(2*zoom);
-    camera.left=-half*a;camera.right=half*a;camera.top=half;camera.bottom=-half;
-    camera.updateProjectionMatrix();
+    const a=w/h;
     camera.position.copy(vec(...config.target).add(new T.Vector3().setFromSpherical(spherical)));
     camera.lookAt(...config.target);camera.updateMatrixWorld();
+    let centerX=0,centerY=0,half;
+    if(config.frame){
+      let left=Infinity,right=-Infinity,bottom=Infinity,top=-Infinity;
+      const point=new T.Vector3();
+      for(const corner of config.frame){
+        point.copy(corner).applyMatrix4(camera.matrixWorldInverse);
+        left=Math.min(left,point.x);right=Math.max(right,point.x);
+        bottom=Math.min(bottom,point.y);top=Math.max(top,point.y);
+      }
+      centerX=(left+right)/2;centerY=(top+bottom)/2;
+      half=Math.max((right-left)/a,top-bottom)*.57/zoom;
+    }else half=Math.max(config.size,config.width/a)/(2*zoom);
+    camera.left=centerX-half*a;camera.right=centerX+half*a;
+    camera.top=centerY+half;camera.bottom=centerY-half;
+    camera.updateProjectionMatrix();
     const active=telemetry.stage;
-    if(view==='field'){
+    if(view==='field'||view==='outlet'){
       const [incoming,drain,flush,source]=config.routes;
       incoming.group.visible=active===1||active===2||active===4;
       source.group.visible=active===1||active===2;
@@ -265,7 +296,7 @@ try {
     config.labels.forEach(([,p],i)=>{
       const q=vec(...p).project(camera),el=labelEls[i];
       el.style.left=(q.x+1)*50+'%';el.style.top=Math.max(30,(1-q.y)*h/2)+'px';
-      el.hidden=Math.abs(q.x)>.86||q.y>.95||q.y<-.83;
+      el.hidden=Math.abs(q.x)>.93||q.y>.95||q.y<-.91;
     });
     badge.textContent=view==='machine'?'已选样瓶 B'+String(telemetry.bottle).padStart(2,'0'):stages[active];
     badge.hidden=view!=='machine'&&active===0;
@@ -274,10 +305,11 @@ try {
 
   select('field');
   const resize=()=>{
+    if(renderer.getContext().isContextLost())return;
     renderer.setSize(viewport.clientWidth,viewport.clientHeight,false);
-    invalid=true;
+    draw(reduced?0:performance.now()/1000);
   };
-  new ResizeObserver(resize).observe(viewport);resize();draw(0);
+  new ResizeObserver(resize).observe(viewport);resize();
   viewport.classList.add('ready');
   resetView.hidden=false;
   resetView.addEventListener('click',resetCamera);
