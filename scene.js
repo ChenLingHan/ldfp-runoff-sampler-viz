@@ -4,6 +4,7 @@ import { mat, mesh, b, cy, pipe, host, valve } from './hardware.js';
 const viewport = document.getElementById('scene-viewport');
 const badge = document.getElementById('scene-state');
 const help = document.getElementById('scene-help');
+const resetView = document.getElementById('reset-view');
 const buttons = [...document.querySelectorAll('[data-view]')];
 const stages = ['待机', '正转预冲', '定量留样', '停泵隔离', '反转排液'];
 const blue = mat(0x2cb2ba,{roughness:.25,emissive:0x16535b,emissiveIntensity:.45});
@@ -163,7 +164,7 @@ function field() {
   cy(scene,-4.30,1.793,-2.22,.11,.016,mat(0x485d52));
   const routes=[trace(scene,supply,blue,.028),trace(scene,waste,amber,.021),trace(scene,sampleWaste,amber,.021),trace(scene,source,blue,.028)];
   return {scene,routes,waterMap,target:[-.38,.20,.55],size:8.5,width:10.6,
-    eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['本田低位出口',[1.04,.40,3.03],'outlet'],['留样主机',[3.48,1.48,3.17]]]};
+    eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['低位出口 · 短量水段',[1.04,.40,3.03],'outlet'],['留样主机',[3.48,1.48,3.17]]]};
 }
 
 function machine() {
@@ -212,9 +213,14 @@ try {
   const spherical=new T.Spherical();
   let view='field',config,zoom=1,drag=null,invalid=true,telemetry=window.runoffSceneState??{stage:0,bottle:1,levels:[],flow:0};
 
-  function select(key){
-    view=key;config=configs[key];zoom=1;
+  function resetCamera(){
+    zoom=1;
     spherical.setFromVector3(vec(...config.eye).sub(vec(...config.target)));
+    invalid=true;
+  }
+
+  function select(key){
+    view=key;config=configs[key];resetCamera();
     labelEls.splice(0).forEach(el=>el.remove());
     config.labels.forEach(([name,,anchor])=>{
       const el=document.createElement('span');el.className='model-label';el.textContent=name;
@@ -258,7 +264,7 @@ try {
     renderer.render(config.scene,camera);
     config.labels.forEach(([,p],i)=>{
       const q=vec(...p).project(camera),el=labelEls[i];
-      el.style.left=(q.x+1)*50+'%';el.style.top=(1-q.y)*50+'%';
+      el.style.left=(q.x+1)*50+'%';el.style.top=Math.max(30,(1-q.y)*h/2)+'px';
       el.hidden=Math.abs(q.x)>.86||q.y>.85||q.y<-.83;
     });
     badge.textContent=view==='machine'?'已选样瓶 B'+String(telemetry.bottle).padStart(2,'0'):stages[active];
@@ -273,6 +279,8 @@ try {
   };
   new ResizeObserver(resize).observe(viewport);resize();draw(0);
   viewport.classList.add('ready');
+  resetView.hidden=false;
+  resetView.addEventListener('click',resetCamera);
   buttons.forEach(btn=>{btn.disabled=false;btn.addEventListener('click',()=>select(btn.dataset.view));});
   window.addEventListener('runoff:scene',event=>{telemetry=event.detail;invalid=true;});
   canvas.addEventListener('pointerdown',e=>{
@@ -298,10 +306,10 @@ try {
     invalid=true;
   });
   canvas.addEventListener('webglcontextlost',e=>{
-    e.preventDefault();viewport.classList.remove('ready');badge.hidden=true;help.textContent='三维暂不可用，当前显示布设图';
+    e.preventDefault();viewport.classList.remove('ready');badge.hidden=true;resetView.hidden=true;help.textContent='三维暂不可用，当前显示布设图';
   });
   canvas.addEventListener('webglcontextrestored',()=>{
-    viewport.classList.add('ready');invalid=true;
+    viewport.classList.add('ready');resetView.hidden=false;invalid=true;
   });
   let last=0;
   function loop(now){

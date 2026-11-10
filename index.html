@@ -7,9 +7,9 @@
 <meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./dashboard.css?v=workbench-5">
-<script defer src="./dashboard.js?v=workbench-5"></script>
-<script type="module" src="./scene.js?v=workbench-4"></script>
+<link rel="stylesheet" href="./dashboard.css?v=workbench-6">
+<script defer src="./dashboard.js?v=workbench-6"></script>
+<script type="module" src="./scene.js?v=workbench-6"></script>
 </head>
 <body>
 <header class="top"><div class="shell">
@@ -22,10 +22,10 @@
 <main class="shell dashboard">
     <section class="surface scene-card" aria-labelledby="scene-title">
       <div class="section-head scene-head">
-        <div class="section-title"><span class="section-number" aria-hidden="true">01</span><h2 id="scene-title">田间布设与采样</h2></div>
+        <div class="section-title"><span class="section-number" aria-hidden="true">01</span><h2 id="scene-title">田间布设与取样</h2></div>
         <div class="view-switch" role="group" aria-label="三维视角"><button type="button" data-view="field" aria-pressed="true" disabled>田块</button><button type="button" data-view="machine" aria-pressed="false" disabled>主机剖视</button><button type="button" data-view="valve" aria-pressed="false" disabled>阀组</button></div>
       </div>
-      <div class="scene-viewport" id="scene-viewport"><img class="poster" src="./field-poster.webp" alt="本田低位量水段、近口阀组与留样主机"><span class="scene-legend" id="scene-state" hidden></span><span class="scene-help" id="scene-help">三维场景加载中</span></div>
+      <div class="scene-viewport" id="scene-viewport"><img class="poster" src="./field-poster.webp" alt="本田低位量水段、近口阀组与留样主机"><span class="scene-legend" id="scene-state" hidden></span><span class="scene-help" id="scene-help">三维场景加载中</span><button class="button reset-view" id="reset-view" type="button" hidden>复位视角</button></div>
       <div class="process" aria-label="留样阶段">
         <div class="process-head">
           <h3>采样流程</h3>
@@ -40,8 +40,11 @@
     <div class="monitoring">
       <section class="surface trend" aria-labelledby="trend-title">
         <div class="section-head">
-          <div class="section-title"><span class="section-number" aria-hidden="true">02</span><h2 id="trend-title">降雨与本田出流</h2></div>
-          <span class="stamp" id="timestamp">—</span>
+          <div class="section-title"><span class="section-number" aria-hidden="true">02</span><h2 id="trend-title">本田出流监测</h2></div>
+          <div class="trend-actions">
+            <span class="stamp" id="timestamp">—</span>
+            <button class="button" id="flow-rule" type="button" aria-haspopup="dialog" aria-controls="flow-dialog">启泵条件</button>
+          </div>
         </div>
         <div class="metrics" aria-label="事件摘要">
           <div><span>累计降雨</span><strong id="rain">—</strong><small>mm</small></div>
@@ -49,7 +52,7 @@
           <div><span>累计出流</span><strong id="volume">—</strong><small>L</small></div>
         </div>
         <div class="plot">
-          <div class="plot-legend" aria-hidden="true"><span class="rain-key">降雨</span><span class="flow-key">流量</span><span class="sample-key">留样时点</span></div>
+          <div class="plot-legend" aria-hidden="true"><span class="rain-key">时段雨量</span><span class="flow-key">出口流量</span><span class="sample-key">入瓶</span><span class="source-key" id="source-key" hidden>取水窗</span></div>
           <svg id="chart" viewBox="0 0 480 174" role="img" aria-label="降雨、出流与留样时点">
             <defs>
               <linearGradient id="flow-fill" x1="0" x2="0" y1="0" y2="1">
@@ -64,12 +67,13 @@
           <button class="button primary" id="play" type="button">回放事件</button>
           <input type="range" id="seek" aria-label="事件时段" min="0" max="0" value="0">
           <output id="cursor" for="seek">—</output>
-          <select id="pace" aria-label="回放速率"><option value="guide">讲解</option><option value="fast">快览</option></select>
+          <select id="pace" aria-label="回放速率"><option value="guide">逐阶段</option><option value="fast">快览</option></select>
+          <button class="button restart" id="restart" type="button" aria-label="回到事件起点" title="回到事件起点">↺</button>
         </div>
       </section>
       <section class="surface sample" aria-labelledby="sample-heading">
         <div class="section-head">
-          <div class="section-title"><span class="section-number" aria-hidden="true">03</span><h2 id="sample-heading">留样与检测</h2></div>
+          <div class="section-title"><span class="section-number" aria-hidden="true">03</span><h2 id="sample-heading">分瓶留样与检测</h2></div>
           <button class="button" id="csv" type="button">导出 CSV</button>
         </div>
         <div class="bottle-grid" id="bottles" role="group" aria-label="选择样瓶查看化验结果"></div>
@@ -80,6 +84,10 @@
               <div><span>悬沙</span><strong id="mass-s">—</strong><small>g</small></div>
               <div><span>总氮</span><strong id="mass-n">—</strong><small>g</small></div>
               <div><span>总磷</span><strong id="mass-p">—</strong><small>g</small></div>
+            </div>
+            <div class="coverage-meter" id="coverage-meter">
+              <div class="coverage-track"><span id="coverage-fill"></span></div>
+              <p id="coverage-context"></p>
             </div>
           </section>
           <section id="sample-detail" aria-labelledby="sample-title" hidden>
@@ -93,7 +101,7 @@
               <p id="probe-readings"></p>
             </div>
             <section class="sample-windows" id="sample-windows" aria-labelledby="windows-title" hidden>
-              <h4 id="windows-title">取水时段</h4>
+              <h4 id="windows-title">实际入口取水时段</h4>
               <ol class="windows" id="source-windows"></ol>
             </section>
           </section>
@@ -107,7 +115,20 @@
     <h2 id="stage">水路说明</h2>
     <form method="dialog"><button class="button" type="submit" autofocus>关闭</button></form>
   </header>
+  <div class="route-path" id="route-path" aria-label="水流方向"></div>
   <p id="route"></p>
+</dialog>
+<dialog class="detail-dialog" id="flow-dialog" aria-labelledby="flow-rule-title">
+  <header class="dialog-head">
+    <h2 id="flow-rule-title">测流与启泵条件</h2>
+    <form method="dialog"><button class="button" type="submit" autofocus>关闭</button></form>
+  </header>
+  <dl class="flow-rules">
+    <dt>拟测流范围</dt><dd>0.05–0.90 L/s，以现场标定为准</dd>
+    <dt>设计启泵范围</dt><dd>约 0.267–0.90 L/s，取样口须浸没</dd>
+    <dt>停采条件</dt><dd>回水、超量程或水位无效时停采并标记</dd>
+  </dl>
+  <p class="rule-readout" id="flow-condition"></p>
 </dialog>
 </body>
 </html>

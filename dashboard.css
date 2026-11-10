@@ -5,7 +5,7 @@
   --green: #286448;
   --line: #dbe5dc;
   --paper: #fdfefa;
-  --page: #f1f5ed;
+  --page: #f3f6f0;
   --wash: #f0f6ef;
   --selected: #e1eee3;
   --rain: #a0bfa7;
@@ -156,7 +156,9 @@ h3 { margin: 0; font-size: var(--text-body); }
 .scene-viewport canvas { touch-action: none; cursor: grab; }
 .scene-viewport canvas:active { cursor: grabbing; }
 .scene-viewport .poster { object-fit: contain; }
-.scene-viewport.ready .poster, .scene-viewport.ready .scene-help, .scene-viewport:not(.ready) .model-label { display: none; }
+.scene-viewport.ready .poster,
+.scene-viewport.ready .scene-help,
+.scene-viewport:not(.ready) :is(.model-label, canvas) { display: none; }
 .scene-legend, .scene-help {
   position: absolute;
   bottom: 8px;
@@ -168,6 +170,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 }
 .scene-legend { left: 8px; color: var(--paper); background: var(--green); }
 .scene-help { right: 8px; color: var(--ink); background: var(--paper); }
+.reset-view { position: absolute; right: 8px; bottom: 8px; z-index: 2; }
 .model-label {
   position: absolute;
   transform: translate(-50%, -115%);
@@ -213,6 +216,8 @@ h3 { margin: 0; font-size: var(--text-body); }
 .steps button[aria-pressed=true] { color: var(--green); border-color: #9dbda6; background: var(--selected); font-weight: 700; }
 .trend { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 9px; }
 #timestamp { padding: 3px 8px; border-radius: 6px; background: var(--wash); }
+.trend-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
+.trend-actions #timestamp { max-width: none; }
 .metrics, .result-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -229,15 +234,19 @@ h3 { margin: 0; font-size: var(--text-body); }
 .plot-legend {
   display: flex;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 3px 11px;
   color: var(--muted);
   font-size: var(--text-small);
 }
 .plot-legend span { display: flex; align-items: center; gap: 4px; }
+.plot-legend span[hidden] { display: none; }
 .plot-legend span::before { content: ""; width: 10px; height: 7px; border-radius: 2px; }
 .plot-legend .rain-key::before { width: 7px; height: 10px; background: var(--rain); }
 .plot-legend .flow-key::before { width: 14px; height: 2px; background: var(--flow); }
 .plot-legend .sample-key::before { width: 7px; background: var(--sample-dot); border-radius: 50%; }
+.plot-legend .source-key::before { width: 8px; height: 10px; background: #c9ddcb; }
+#flow-rule { padding-block: 2px; }
 #chart { display: block; width: 100%; height: 100%; min-height: 0; }
 #chart text { fill: var(--muted); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
 .chart-gridline { stroke: var(--line); stroke-dasharray: 3 3; }
@@ -245,6 +254,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 .flow-fill-top { stop-color: var(--rain); stop-opacity: .34; }
 .flow-fill-bottom { stop-color: var(--rain); stop-opacity: 0; }
 .chart-rain { fill: var(--rain); }
+.chart-source { fill: #7da88a; opacity: .48; }
 .chart-flow { fill: none; stroke: var(--flow); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .chart-sample { fill: var(--sample-dot); stroke: var(--paper); stroke-width: 1; }
 .chart-sample-selected { fill: var(--paper); stroke: var(--green); stroke-width: 2.4; }
@@ -252,7 +262,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 .chart-cursor-dot { fill: var(--flow); stroke: var(--paper); stroke-width: 1.2; }
 .timeline {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -262,9 +272,17 @@ h3 { margin: 0; font-size: var(--text-body); }
 }
 .timeline input { width: 100%; margin: 0; accent-color: var(--green); }
 .timeline output { font-size: var(--text-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timeline .restart { font-size: 17px; line-height: 1; padding: 5px 7px; }
 
 .sample { display: grid; gap: 12px; }
 .bottle-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.bottle-grid.grouped { grid-template-columns: auto repeat(4, minmax(0, 1fr)); }
+.bottle-group { display: none; }
+.grouped .bottle-group { display: grid; align-items: center; padding-inline: 2px 5px; color: var(--muted); font-size: var(--text-small); white-space: nowrap; }
+.grouped .reserve-title { display: none; }
+.grouped #b7 { grid-area: 1 / 5; }
+.grouped #b8 { grid-area: 2 / 5; }
+.grouped :is(#b7, #b8) { border-style: dashed; }
 .bottle {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -291,8 +309,12 @@ h3 { margin: 0; font-size: var(--text-body); }
   border-radius: 9px;
   background: var(--wash);
 }
-.result-grid { margin-top: 15px; padding: 12px 0; background: transparent; }
+.result-grid { margin-top: 7px; padding: 5px 0; background: transparent; }
 .result-grid > div:first-child { padding-left: 0; }
+.coverage-meter { display: grid; grid-template-columns: minmax(42px, 1fr) auto; gap: 10px; align-items: center; margin-top: 10px; }
+.coverage-meter p { margin: 0; color: var(--muted); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
+.coverage-track { height: 6px; border-radius: 8px; background: #dce8dc; overflow: hidden; }
+.coverage-track span { display: block; height: 100%; border-radius: inherit; background: var(--green); }
 .sample-facts {
   display: flex;
   flex-wrap: wrap;
@@ -339,6 +361,13 @@ h3 { margin: 0; font-size: var(--text-body); }
 .dialog-head .button { padding: 6px 12px; }
 .detail-dialog p { margin: 8px 0 0; }
 .detail-dialog p:empty { display: none; }
+.flow-rules { display: grid; grid-template-columns: auto 1fr; gap: 9px 13px; margin: 15px 0; }
+.flow-rules dt { font-weight: 650; }
+.flow-rules dd { margin: 0; color: var(--muted); }
+.rule-readout { padding: 8px 10px; border-radius: 7px; background: var(--wash); }
+.route-path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 13px; }
+.route-path span { font-size: var(--text-small); }
+.route-path span + span::before { content: "→"; color: var(--green); margin-right: 6px; }
 
 @media (min-width: 1000px) and (min-height: 680px) {
   .dashboard { height: calc(100dvh - var(--header-height)); }
@@ -347,11 +376,14 @@ h3 { margin: 0; font-size: var(--text-body); }
   :root { --space: 10px; --header-height: 56px; }
   .scene-card { gap: 9px; }
 }
+@media (max-width: 1250px) {
+  .grouped .bottle { padding-inline: 4px; column-gap: 4px; }
+}
 @media (max-width: 999px), (max-height: 679px) {
   .scene-viewport { min-height: 345px; }
   .trend { min-height: 290px; }
 }
-@media (max-width: 880px) {
+@media (max-width: 960px) {
   .dashboard { grid-template-columns: 1fr; }
   .trend { min-height: 330px; }
   .scene-viewport { min-height: clamp(240px, 55vw, 460px); }
@@ -371,17 +403,25 @@ h3 { margin: 0; font-size: var(--text-body); }
   .model-label[data-anchor=outlet] { transform: translate(-92%, -115%); }
   .model-label[data-anchor=outlet]::after { left: 92%; }
   .steps button { gap: 2px; }
-  .trend { min-height: 300px; }
+  .trend { min-height: 350px; }
   .metrics > div, .result-grid > div { padding-inline: 7px; }
   .sample-output { min-height: 0; }
   .bottle { min-height: 40px; }
+  .bottle-grid.grouped { grid-template-columns: auto repeat(3, minmax(0, 1fr)); }
+  .grouped .reserve-title { display: grid; }
+  .grouped :is(#b7, #b8) { grid-area: auto; }
+  #timestamp { padding-inline: 4px; }
 }
 @media (max-width: 420px) {
-  .bottle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bottle-grid:not(.grouped) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grouped .bottle { display: block; padding-inline: 4px; text-align: center; }
+  .grouped .glass { display: none; }
   .windows { grid-template-columns: 1fr; gap: 2px; }
-  .timeline { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .timeline { grid-template-columns: minmax(0, 1fr) auto auto auto; }
   .timeline input { grid-row: 2; grid-column: 1 / -1; }
   .timeline .primary { justify-self: start; }
+  .flow-rules { grid-template-columns: 1fr; gap: 4px; }
+  .flow-rules dd + dt { margin-top: 6px; }
 }
 @media (max-width: 360px) {
   .scene-head { flex-wrap: wrap; }

@@ -9,6 +9,14 @@ const states=[
  ['隔离','停泵并切阀，关闭源水 S，确认 C—D 到位'],
  ['清管','源水 S 隔离，残液经 C → D 进入独立容器']
 ];
+const stagePaths=[
+ [],
+ ['源水 S','主管 C','正转泵','预冲罐'],
+ ['源水 S','主管 C','正转泵','目标样瓶'],
+ ['停泵','隔离 S','确认 C—D'],
+ ['出液臂进气','反转泵','主管 C','排液端 D','残液罐']
+];
+const limits={measureMin:.05,pumpMin:.8/60/.05,max:.90};
 function fieldPreview(){
  const timeStep=.25, end=2400, width=60;
  const g=(t,center,sigma)=>Math.exp(-.5*((t-center)/sigma)**2);
@@ -25,9 +33,9 @@ function fieldPreview(){
   const start=t-timeStep+timeStep*(next-cumulative[i-1])/(v-cumulative[i-1]);
   next+=width;
   if(start+46>end||start-(cycles.at(-1)??-Infinity)<46)continue;
-  let allowed=discharge(start)>=.8/60/.05&&discharge(start+37.64)>=.8/60/.05;
+  let allowed=discharge(start)>=limits.pumpMin&&discharge(start+37.64)>=limits.pumpMin;
   for(let s=start;allowed&&s<=start+37.64;s+=timeStep){
-   const f=discharge(s);allowed=f>=.8/60/.05&&f<=.90;
+   const f=discharge(s);allowed=f>=limits.pumpMin&&f<=limits.max;
   }
   if(!allowed)continue;
   const group=Math.floor(cycles.length/3)*3;
@@ -87,9 +95,15 @@ function chart(points,samples){
    label(x0-7,yy+4,num(i*maxF/divisions,2),'end'),label(x1+7,yy+4,num(i*maxR/divisions,1)));
  }
  data.append(label(x0,14,'流量（L/s）'),label(x1,14,'雨量（mm）','end'),label((x0+x1)/2,height-2,'事件时间（min）','middle'));
- for(let i=0;i<=4;i++)data.append(label(x(maxT*i/4),y1+16,String(Math.round(maxT*i/4)),'middle'));
+ const timeLabel=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:maxT<4?2:1});
+ for(let i=0;i<=4;i++)data.append(label(x(maxT*i/4),y1+16,timeLabel.format(maxT*i/4),'middle'));
  const seen=points.slice(0,pos+1),barWidth=Math.min(12,(x1-x0)/43);
  const current=seen.at(-1);
+ if(showBottle)for(const slot of samples[bottle-1].slots){
+  for(const [start,end] of sourceTimes(slot)){
+   data.append(svg('rect',{x:x(start),y:y0,width:Math.max(1,x(end)-x(start)),height:y1-y0,class:'chart-source'}));
+  }
+ }
  const line=seen.map(p=>x(p.minute)+','+y(p.flowLs)).join(' ');
  if(seen.length>1)data.append(svg('polygon',{points:x(seen[0].minute)+','+y1+' '+line+' '+x(current.minute)+','+y1,fill:'url(#flow-fill)'}));
  for(const p of seen)if(p.rainMm>0)data.append(svg('rect',{x:x(p.minute)-barWidth/2,y:yr(p.rainMm),width:barWidth,height:y1-yr(p.rainMm),class:'chart-rain',rx:2}));
@@ -114,12 +128,17 @@ const sourceTimes=s=>model.grouped&&s.sourceWindows?s.sourceWindows:[[s.sourceSt
 const formatWindows=s=>sourceTimes(s).map(([start,end])=>mm(start)+'–'+mm(end)).join(' + ');
 function render(){
  const p=model.points[pos],bs=visibleBottles(),b=bs[bottle-1],filled=bs.filter(n=>n.slots.length);
- setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,2));setText('volume',num(p.volumeL,2));
+ setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,3));setText('volume',num(p.volumeL,2));
+ const flowStatus=p.flowLs>limits.max?'超出拟测流上限，停采':p.flowLs<limits.measureMin?'低于拟测流下限':p.flowLs<limits.pumpMin?'处于拟测流范围内，低于启泵流量':'流量达到启泵范围，仍需核验浸没和设备状态';
+ setText('flow-condition','当前流量 '+num(p.flowLs,3)+' L/s · '+flowStatus);
  $('sample-summary').hidden=showBottle;
  $('sample-detail').hidden=!showBottle;
+ $('source-key').hidden=!showBottle||!b.slots.length;
+ $('bottles').classList.toggle('grouped',model.grouped);
  const update=asOf===null?'':new Date(asOf).toLocaleTimeString('zh-CN',{hour12:false})+' · ';
  setText('timestamp',update+model.eventId);
  $('seek').max=model.points.length-1;$('seek').value=pos;setText('cursor','T+'+mm(p.minute));
+ $('seek').setAttribute('aria-valuetext','事件开始后 '+mm(p.minute));
  chart(model.points,bs);
  for(const n of bs){
   const k=$('b'+n.id), volume=total(n,'volumeMl'), last=n.slots.at(-1);
@@ -133,10 +152,11 @@ function render(){
  }
  const last=b.slots.at(-1), id='B'+String(b.id).padStart(2,'0');
  setText('sample-title',b.analyte?id+' · '+b.analyte:'样瓶 '+id);
- setText('sample-note',last?num(total(b,'volumeMl'),0)+' mL · 入瓶 T+'+mm(last.minute)+' · 代表 '+num(total(b,'representedVolumeL'),0)+' L':'');
+ setText('sample-note',last?'样量 '+num(total(b,'volumeMl'),0)+' mL · 末次入瓶 T+'+mm(last.minute)+' · 候选水量 '+num(total(b,'representedVolumeL'),0)+' L':'');
  const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
  const measures=assays.filter(([,key])=>valid(lab?.[key])).map(([,key,name])=>name+' '+num(lab[key],key==='sscMgL'?0:2)+' mg/L');
- setText('qc',measures.length?measures.join(' · '):last?'待关联化验结果':'该瓶尚无样品');
+ const assayStatus=model.grouped&&last&&b.slots.length<3?'已留样 '+b.slots.length+' / 3 轮':last?'待关联化验结果':'该瓶尚无样品';
+ setText('qc',measures.length?measures.join(' · '):assayStatus);
  setText('probe-readings',probe?'水温 '+num(probe.temperatureC)+' °C · 电导率 '+num(probe.conductivityUsCm,0)+' μS/cm':'');
  let coverage=0;
  for(const [element,key] of assays){
@@ -150,7 +170,10 @@ function render(){
    coverage+=total(group[0],'representedVolumeL');
   }
  }
- setText('coverage',coverage?(model.grouped?'共同覆盖 ':'化验覆盖 ')+num(coverage,0)+' L':'暂无合格区间');
+ setText('coverage',coverage?(model.grouped?'共同覆盖 ':'总氮覆盖 ')+num(coverage,0)+' L':'暂无合格区间');
+ const coverageRatio=p.volumeL>0?coverage/p.volumeL*100:0;
+ $('coverage-fill').style.width=Math.min(100,coverageRatio)+'%';
+ setText('coverage-context',p.volumeL>0?'占当前累计出流 '+num(coverageRatio,2)+'%':'尚无累计出流');
  const windows=b.slots.map(s=>{
   const item=document.createElement('li');
   for(const [start,end] of sourceTimes(s)){
@@ -226,6 +249,13 @@ function init(){
  });
  document.addEventListener('fullscreenchange',()=>{fullscreen.textContent=document.fullscreenElement?'退出全屏':'全屏展示';});
  for(let i=1;i<=8;i++){
+  const groupName={1:'第 1 组',4:'第 2 组',7:'备用'}[i];
+  if(groupName){
+   const group=document.createElement('span');
+   group.className=i===7?'bottle-group reserve-title':'bottle-group';
+   group.textContent=groupName;
+   $('bottles').append(group);
+  }
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
   e.setAttribute('aria-controls','sample-detail');
   e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><strong></strong>';
@@ -243,12 +273,20 @@ function init(){
   const number=document.createElement('span');number.textContent=String(i+1).padStart(2,'0');
   e.append(number,s[0]);e.addEventListener('click',()=>{stop();pinned=i;render();});$('steps').append(e);
  });
- $('route-button').addEventListener('click',()=>$('route-dialog').showModal());
+ $('route-button').addEventListener('click',()=>{
+  const nodes=stagePaths[pinned].map(label=>{
+   const node=document.createElement('span');node.textContent=label;return node;
+  });
+  $('route-path').replaceChildren(...nodes);
+  $('route-dialog').showModal();
+ });
+ $('flow-rule').addEventListener('click',()=>$('flow-dialog').showModal());
  $('follow').addEventListener('click',()=>{
   pinned=null;render();
   $('steps').querySelector('[aria-pressed=true]').focus();
  });
  $('seek').addEventListener('input',()=>{stop();pos=Number($('seek').value);render()});
+ $('restart').addEventListener('click',()=>{stop();pos=0;pinned=null;render();});
  $('play').addEventListener('click',()=>{
   if(timer!==null){stop();return;}
   if(pos===model.points.length-1)pos=0;
