@@ -238,9 +238,9 @@ h3 { margin: 0; font-size: var(--text-body); }
 .chart-tip {
   position: absolute;
   top: 18px;
-  left: clamp(6px, calc(var(--tip-x, 0px) - 82px), calc(100% - 170px));
+  left: clamp(6px, var(--tip-x, 6px), calc(100% - 170px));
   width: 164px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--paper);
@@ -248,7 +248,9 @@ h3 { margin: 0; font-size: var(--text-body); }
   font-size: var(--text-small);
   pointer-events: none;
 }
-.chart-tip span { display: block; color: var(--muted); }
+.chart-tip div { display: flex; justify-content: space-between; gap: 5px; }
+.chart-tip span { color: var(--muted); }
+.chart-tip b { white-space: nowrap; font-variant-numeric: tabular-nums; }
 #chart-guide[hidden] { display: none; }
 .event-insights { display: none; }
 .plot-legend {
@@ -266,6 +268,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 .plot-legend .flow-key::before { width: 14px; height: 2px; background: var(--flow); }
 .plot-legend .sample-key::before { width: 7px; background: var(--sample-dot); border-radius: 50%; }
 .plot-legend .source-key::before { width: 8px; height: 10px; background: #c9ddcb; }
+.plot-legend .source-key[data-active=false]::before { border: 1px dashed #839e88; background: transparent; }
 #flow-rule { padding-block: 2px; }
 #chart { display: block; width: 100%; height: 100%; min-height: 0; }
 #chart[data-seekable] { cursor: crosshair; touch-action: pan-y; }
@@ -297,11 +300,14 @@ h3 { margin: 0; font-size: var(--text-body); }
 .timeline-time span { color: var(--muted); font-size: var(--text-small); }
 .timeline-time span::before { content: "/"; margin-right: 4px; }
 .timeline .restart { font-size: 17px; line-height: 1; padding: 5px 7px; }
+.timeline .primary { min-inline-size: 5.5em; }
 
 .sample {
+  --readout-height: 188px;
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 30%);
+  grid-template-rows: auto var(--readout-height);
   gap: 10px 14px;
 }
 .sample > .section-head { grid-column: 1 / -1; }
@@ -400,14 +406,28 @@ h3 { margin: 0; font-size: var(--text-body); }
 .bottle[aria-pressed=true] .glass-body { border-color: var(--green); }
 .sample-output {
   display: grid;
-  align-content: center;
+  grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
-  padding: 10px 12px;
+  min-height: 0;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--wash);
 }
-.result-grid { margin-top: 7px; padding: 5px 0; background: transparent; }
+.readout-head { min-height: 38px; padding: 5px 11px; border-bottom: 1px solid var(--line); }
+.readout-head h3 { min-width: 0; overflow-wrap: anywhere; }
+.readout-body {
+  min-height: 0;
+  padding: 5px 11px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.readout-body:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.readout-body:has(#sample-detail[hidden]) { display: grid; align-content: center; }
+.screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.result-grid { margin-top: 5px; padding: 5px 0; background: transparent; }
 .result-grid > div:first-child { padding-left: 0; }
 .coverage-meter { display: grid; grid-template-columns: minmax(42px, 1fr) auto; gap: 10px; align-items: center; margin-top: 10px; }
 .coverage-meter p { margin: 0; color: var(--muted); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
@@ -418,7 +438,7 @@ h3 { margin: 0; font-size: var(--text-body); }
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 12px;
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--muted);
   font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
@@ -426,6 +446,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 .sample-facts p { margin: 0; }
 .sample-facts p:empty { display: none; }
 #qc { color: var(--ink); font-weight: 700; }
+.assay-state { padding: 1px 5px; border: 1px solid #c6d9ca; border-radius: 4px; color: var(--muted); font-size: 12px; }
 .bottle-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -437,8 +458,9 @@ h3 { margin: 0; font-size: var(--text-body); }
 .bottle-facts dt { color: var(--muted); }
 .bottle-facts dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 650; }
 .sample-actions { display: flex; align-items: center; gap: 4px; }
+.sample-actions[hidden] { display: none; }
 .dashboard:has(.scene-viewport:not(.ready)) #show-rack { display: none; }
-.sample-windows { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
+.sample-windows { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
 .sample-windows h4 { margin: 0 0 3px; color: var(--muted); font-size: var(--text-small); font-weight: 600; }
 .windows {
   display: grid;
@@ -450,11 +472,10 @@ h3 { margin: 0; font-size: var(--text-body); }
   font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
 }
-.windows li { display: flex; flex-wrap: wrap; gap: 0 7px; counter-increment: intake; }
+.windows li { display: flex; flex-wrap: wrap; gap: 1px 7px; counter-increment: intake; }
 .windows li::before { content: counter(intake, decimal-leading-zero); color: var(--muted); margin-right: 1px; }
 .windows span { white-space: nowrap; }
 @media (min-width: 1360px) {
-  .bottle-facts > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 4px; }
   .windows { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
   .windows li { display: grid; grid-template-columns: auto 1fr; gap: 0 4px; }
   .windows li::before { grid-row: 1 / span 2; }
@@ -509,7 +530,7 @@ h3 { margin: 0; font-size: var(--text-body); }
 }
 @media (max-width: 960px) {
   .dashboard { grid-template-columns: 1fr; grid-template-rows: none; }
-  .sample { grid-template-columns: minmax(0, 1fr); }
+  .sample { --readout-height: 198px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto var(--readout-height); }
   .trend { min-height: 330px; }
   .scene-viewport { min-height: clamp(240px, 55vw, 460px); }
   .surface { border-radius: 12px; }
@@ -545,6 +566,7 @@ h3 { margin: 0; font-size: var(--text-body); }
   .flow-rules dd + dt { margin-top: 6px; }
 }
 @media (max-width: 360px) {
+  .timeline-time #duration { display: none; }
   .scene-head { flex-wrap: wrap; }
   .brand { gap: 6px; }
   .top .shell { gap: 6px; }

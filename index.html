@@ -7,8 +7,8 @@
 <meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./dashboard.css?v=workbench-8">
-<script defer src="./dashboard.js?v=workbench-8"></script>
+<link rel="stylesheet" href="./dashboard.css?v=workbench-9">
+<script defer src="./dashboard.js?v=workbench-9"></script>
 <script type="module" src="./scene.js?v=workbench-8"></script>
 </head>
 <body>
@@ -51,7 +51,7 @@
           <div><span>累计出流</span><strong id="volume">—</strong><small>L</small></div>
         </div>
         <div class="plot">
-          <div class="plot-legend" aria-hidden="true"><span class="rain-key">时段雨量</span><span class="flow-key">出口流量</span><span class="sample-key">入瓶</span><span class="source-key" id="source-key" hidden>取水窗</span></div>
+          <div class="plot-legend" aria-hidden="true"><span class="rain-key">时段雨量</span><span class="flow-key">出口流量</span><span class="sample-key">入瓶</span><span class="source-key" id="source-key" data-active="false">取水窗</span></div>
           <div class="plot-frame" id="plot-frame">
           <svg id="chart" viewBox="0 0 480 174" role="img" aria-label="降雨、出流与留样时点">
             <defs>
@@ -64,7 +64,9 @@
             <line id="chart-guide" class="chart-cursor" hidden/>
           </svg>
           <div class="chart-tip" id="chart-tip" aria-hidden="true" hidden>
-            <strong id="chart-tip-time"></strong><span id="chart-tip-values"></span>
+            <strong id="chart-tip-time"></strong>
+            <div><span>出口流量</span><b id="chart-tip-flow"></b></div>
+            <div><span>累计雨量</span><b id="chart-tip-rain"></b></div>
           </div>
           </div>
         </div>
@@ -91,8 +93,17 @@
           <div class="rack reserve-rack"><h3 class="rack-title">备用位</h3><div class="rack-slots" id="rack-spares"></div></div>
         </div>
         <div class="sample-output">
+          <div class="subhead readout-head">
+            <h3 id="results-heading" tabindex="-1">合格区间输出量</h3>
+            <h3 id="sample-title" hidden>样瓶明细</h3>
+            <span class="stamp" id="coverage">—</span>
+            <div class="sample-actions" id="sample-actions" hidden>
+              <button class="button" id="show-rack" type="button" aria-controls="scene-viewport">看瓶架</button>
+              <button class="button subtle" id="show-summary" type="button" aria-controls="sample-summary">返回汇总</button>
+            </div>
+          </div>
+          <div class="readout-body" id="readout-body" role="region" aria-label="检测与取水记录" tabindex="0">
           <section id="sample-summary" aria-labelledby="results-heading">
-            <div class="subhead"><h3 id="results-heading" tabindex="-1">合格区间的输出量</h3><span class="stamp" id="coverage">—</span></div>
             <div class="result-grid">
               <div><span>悬沙</span><strong id="mass-s">—</strong><small>g</small></div>
               <div><span>总氮</span><strong id="mass-n">—</strong><small>g</small></div>
@@ -104,19 +115,13 @@
             </div>
           </section>
           <section id="sample-detail" aria-labelledby="sample-title" hidden>
-            <div class="subhead">
-              <h3 id="sample-title">样瓶明细</h3>
-              <div class="sample-actions">
-                <button class="button" id="show-rack" type="button" aria-controls="scene-viewport">看瓶架</button>
-                <button class="button subtle" id="show-summary" type="button" aria-controls="sample-summary">汇总</button>
-              </div>
-            </div>
             <div class="sample-facts">
               <p id="qc">—</p>
+              <p class="assay-state" id="assay-state"></p>
               <p id="probe-readings"></p>
             </div>
             <dl class="bottle-facts" id="bottle-facts" hidden>
-              <div><dt>样量</dt><dd id="bottle-amount">—</dd></div>
+              <div><dt>样量 / 瓶容</dt><dd id="bottle-amount">—</dd></div>
               <div><dt>末次入瓶</dt><dd id="bottle-arrival">—</dd></div>
               <div><dt>候选水量</dt><dd id="bottle-represented">—</dd></div>
             </dl>
@@ -125,7 +130,9 @@
               <ol class="windows" id="source-windows"></ol>
             </section>
           </section>
+          </div>
         </div>
+        <p class="screen-reader" id="selection-status" role="status"></p>
       </section>
     <noscript>请启用 JavaScript 以浏览监测工作台</noscript>
 </main>

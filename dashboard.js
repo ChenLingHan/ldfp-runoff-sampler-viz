@@ -74,7 +74,10 @@ const valid=(x,a=0,b=Infinity)=>typeof x==='number'&&Number.isFinite(x)&&x>=a&&x
 const num=(x,p=1)=>valid(x,-1000)?x.toFixed(p):'—';
 const mm=x=>{const s=Math.round(x*60);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
 const total=(b,key)=>b.slots.reduce((a,s)=>a+s[key],0);
-function setText(id,v){$(id).textContent=v}
+function setText(id,v){
+ const element=$(id);
+ if(element.textContent!==v)element.textContent=v;
+}
 function svg(tag,props={},label){
  const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
  for(const [k,v] of Object.entries(props))e.setAttribute(k,v);
@@ -163,7 +166,11 @@ function render(){
  setText('flow-condition','当前流量 '+num(p.flowLs,3)+' L/s · '+flowStatus);
  $('sample-summary').hidden=showBottle;
  $('sample-detail').hidden=!showBottle;
- $('source-key').hidden=!showBottle||!b.slots.length;
+ $('results-heading').hidden=showBottle;
+ $('sample-title').hidden=!showBottle;
+ $('coverage').hidden=showBottle;
+ $('sample-actions').hidden=!showBottle;
+ $('source-key').dataset.active=String(showBottle&&b.slots.length>0);
  $('bottles').classList.toggle('grouped',model.grouped);
  const update=asOf===null?'':new Date(asOf).toLocaleTimeString('zh-CN',{hour12:false})+' · ';
  setText('timestamp',update+model.eventId);
@@ -191,14 +198,18 @@ function render(){
  setText('sample-title',b.analyte?id+' · '+b.analyte:'样瓶 '+id);
  $('bottle-facts').hidden=!last;
  if(last){
-  setText('bottle-amount',num(total(b,'volumeMl'),0)+' mL');
+  setText('bottle-amount',num(total(b,'volumeMl'),0)+' / '+BOTTLE_CAPACITY_ML+' mL');
   setText('bottle-arrival','T+'+mm(last.minute));
   setText('bottle-represented',num(total(b,'representedVolumeL'),0)+' L');
  }
  const probe=b.probe?.quality==='valid'?b.probe:null,lab=b.lab?.status==='released'?b.lab:null;
  const measures=assays.filter(([,key])=>valid(lab?.[key])).map(([,key,name])=>name+' '+num(lab[key],key==='sscMgL'?0:2)+' mg/L');
- const assayStatus=model.grouped&&last&&b.slots.length<3?'已留样 '+b.slots.length+' / 3 轮':last?'待关联化验结果':'该瓶尚无样品';
- setText('qc',measures.length?measures.join(' · '):assayStatus);
+ const collecting=model.grouped&&last&&b.slots.length<3;
+ const reserve=model.grouped&&b.id>=7;
+ const assayStatus=measures.length?'已关联化验':collecting?'留样中':last?'待化验':'';
+ const emptyStatus=reserve?'备用瓶当前未启用':'截至当前时刻尚未入瓶';
+ setText('assay-state',assayStatus);
+ setText('qc',measures.length?measures.join(' · '):collecting?'已留样 '+b.slots.length+' / 3 轮':last?'已入瓶，等待化验记录':emptyStatus);
  setText('probe-readings',probe?'水温 '+num(probe.temperatureC)+' °C · 电导率 '+num(probe.conductivityUsCm,0)+' μS/cm':'');
  let coverage=0;
  for(const [element,key] of assays){
@@ -297,8 +308,9 @@ function init(){
   guide.setAttribute('y1',y0);guide.setAttribute('y2',y1);
   guide.removeAttribute('hidden');
   setText('chart-tip-time','T+'+mm(p.minute));
-  setText('chart-tip-values',num(p.flowLs,3)+' L/s · 累计雨量 '+num(p.rainTotalMm)+' mm');
-  $('chart-tip').style.setProperty('--tip-x',x+'px');
+  setText('chart-tip-flow',num(p.flowLs,3)+' L/s');
+  setText('chart-tip-rain',num(p.rainTotalMm)+' mm');
+  $('chart-tip').style.setProperty('--tip-x',(x<plotScale.width-178?x+12:x-176)+'px');
   $('chart-tip').hidden=false;
  });
  chartElement.addEventListener('pointerleave',hideChartTip);
@@ -318,14 +330,21 @@ function init(){
  for(let i=1;i<=8;i++){
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
   e.setAttribute('aria-controls','sample-detail');
+  e.setAttribute('aria-keyshortcuts','ArrowLeft ArrowRight Home End');
   e.innerHTML='<span class="glass" aria-hidden="true"><span class="glass-body"><span class="glass-liquid"></span></span></span><span class="bottle-name"><strong></strong><span class="bottle-purpose"></span></span><span class="bottle-volume"></span>';
   e.querySelector('strong').textContent='B'+String(i).padStart(2,'0');
-  e.addEventListener('click',()=>{
-   stop();bottle=i;showBottle=true;render();
-   $('sample-detail').scrollIntoView({block:'nearest'});
-  });
+  e.addEventListener('click',()=>selectBottle(i,true));
   $(i<=3?'rack-a':i<=6?'rack-b':'rack-spares').append(e);
  }
+ $('bottles').addEventListener('keydown',event=>{
+  const button=event.target.closest('.bottle');
+  if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  const current=Number(button.id.slice(1)),count=model.bottles.length;
+  const next={ArrowLeft:(current+count-2)%count+1,ArrowRight:current%count+1,Home:1,End:count}[event.key];
+  event.preventDefault();
+  $('b'+next).focus();
+  selectBottle(next,false);
+ });
  const machineView=document.querySelector('[data-view="machine"]');
  const showRack=$('show-rack');
  showRack.addEventListener('click',()=>{
@@ -335,7 +354,9 @@ function init(){
   $('scene-viewport').scrollIntoView({block:'nearest'});
  });
  $('show-summary').addEventListener('click',()=>{
-  showBottle=false;render();$('results-heading').focus();
+  showBottle=false;render();$('readout-body').scrollTop=0;
+  $('results-heading').focus({preventScroll:true});
+  setText('selection-status','显示检测汇总');
  });
  states.forEach((s,i)=>{
   const e=document.createElement('button');e.type='button';
@@ -373,5 +394,11 @@ function init(){
  });
  if(CONFIG.endpoint){$('timeline').hidden=true;$('timeline').style.display='none';connectStatus('loading');poll();}
  else {pos=preview.points.length-1;render();}
+}
+function selectBottle(id,reveal){
+ stop();bottle=id;showBottle=true;render();
+ $('readout-body').scrollTop=0;
+ setText('selection-status','已选 '+$('sample-title').textContent);
+ if(reveal&&matchMedia('(max-width: 960px)').matches)$('readout-body').parentElement.scrollIntoView({block:'nearest'});
 }
 init();
