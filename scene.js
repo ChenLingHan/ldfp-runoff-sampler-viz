@@ -163,7 +163,7 @@ function field() {
   cy(scene,-4.30,1.71,-2.22,.14,.15,steel);
   cy(scene,-4.30,1.793,-2.22,.11,.016,mat(0x485d52));
   const routes=[trace(scene,supply,blue,.028),trace(scene,waste,amber,.021),trace(scene,sampleWaste,amber,.021),trace(scene,source,blue,.028)];
-  return {scene,routes,waterMap,target:[-.38,.20,.55],size:8.5,width:10.6,
+  return {scene,routes,waterMap,target:[-.38,.32,.55],size:7.35,width:10.6,
     eye:[9,7.8,12],labels:[['雨量计',[-4.3,1.85,-2.22]],['低位出口 · 短量水段',[1.04,.40,3.03],'outlet'],['留样主机',[3.48,1.48,3.17]]]};
 }
 
@@ -265,7 +265,7 @@ try {
     config.labels.forEach(([,p],i)=>{
       const q=vec(...p).project(camera),el=labelEls[i];
       el.style.left=(q.x+1)*50+'%';el.style.top=Math.max(30,(1-q.y)*h/2)+'px';
-      el.hidden=Math.abs(q.x)>.86||q.y>.85||q.y<-.83;
+      el.hidden=Math.abs(q.x)>.86||q.y>.95||q.y<-.83;
     });
     badge.textContent=view==='machine'?'已选样瓶 B'+String(telemetry.bottle).padStart(2,'0'):stages[active];
     badge.hidden=view!=='machine'&&active===0;

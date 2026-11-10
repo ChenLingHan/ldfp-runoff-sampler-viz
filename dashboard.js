@@ -1,6 +1,7 @@
 'use strict';
 // Set endpoint to a CORS-enabled HTTPS endpoint for field telemetry. See README.
 const CONFIG={endpoint:'',intervalMs:15000,staleMs:60000};
+const BOTTLE_CAPACITY_ML=500;
 const $=id=>document.getElementById(id);
 const states=[
  ['待机',''],
@@ -143,10 +144,13 @@ function render(){
  for(const n of bs){
   const k=$('b'+n.id), volume=total(n,'volumeMl'), last=n.slots.at(-1);
   k.setAttribute('aria-pressed',String(showBottle&&n.id===bottle));
-  k.querySelector('b').style.height=(volume/5)+'%';
-  const caption='B'+String(n.id).padStart(2,'0')+(n.analyte?' · '+n.analyte:'');
-  const bottleSummary=caption+' · '+(last?num(volume,0)+' mL':'未留样');
-  k.querySelector('strong').textContent=caption;
+  k.querySelector('.glass-liquid').style.height=(volume/BOTTLE_CAPACITY_ML*100)+'%';
+  k.dataset.empty=String(!last);
+  const amount=last?num(volume,0)+' mL':'空瓶';
+  const purpose=n.analyte??'';
+  const bottleSummary=k.querySelector('strong').textContent+(purpose?' · '+purpose:'')+' · '+amount;
+  k.querySelector('.bottle-purpose').textContent=purpose;
+  k.querySelector('.bottle-volume').textContent=amount;
   k.title=bottleSummary;
   k.setAttribute('aria-label',bottleSummary);
  }
@@ -199,7 +203,7 @@ function validate(v){
  let t=-1,w=-1,r=-1;
  for(const p of v.points){if(!p||!valid(p.minute)||p.minute<=t||!valid(p.volumeL)||p.volumeL<w||!valid(p.rainTotalMm)||p.rainTotalMm<r||!valid(p.rainMm)||!valid(p.flowLs)||!Number.isInteger(p.stage)||!valid(p.stage,0,4))throw Error('invalid series');t=p.minute;w=p.volumeL;r=p.rainTotalMm;}
  v.bottles.forEach((b,i)=>{
-  if(!b||b.id!==i+1||!Array.isArray(b.slots)||b.slots.length>3||b.slots.some((s,k)=>!s||!valid(s.minute,0,t)||!valid(s.sourceStartMinute,0,s.minute)||!valid(s.sourceEndMinute,s.sourceStartMinute,s.minute)||!valid(s.volumeMl,.01,500)||!valid(s.representedVolumeL,.01)||(k>0&&s.minute<=b.slots[k-1].minute))||total(b,'volumeMl')>500)throw Error('invalid bottle');
+  if(!b||b.id!==i+1||!Array.isArray(b.slots)||b.slots.length>3||b.slots.some((s,k)=>!s||!valid(s.minute,0,t)||!valid(s.sourceStartMinute,0,s.minute)||!valid(s.sourceEndMinute,s.sourceStartMinute,s.minute)||!valid(s.volumeMl,.01,BOTTLE_CAPACITY_ML)||!valid(s.representedVolumeL,.01)||(k>0&&s.minute<=b.slots[k-1].minute))||total(b,'volumeMl')>BOTTLE_CAPACITY_ML)throw Error('invalid bottle');
   if(b.probe!=null&&(typeof b.probe!=='object'||!['valid','invalid'].includes(b.probe.quality)||(b.probe.quality==='valid'&&(!valid(b.probe.temperatureC,-20,70)||!valid(b.probe.conductivityUsCm)))))throw Error('invalid probe');
   if(b.lab!=null&&(typeof b.lab!=='object'||!['pending','released'].includes(b.lab.status)||(b.lab.status==='released'&&(!valid(b.lab.tnMgL)||!valid(b.lab.tpMgL)||(b.lab.sscMgL!=null&&!valid(b.lab.sscMgL))))))throw Error('invalid laboratory result');
  });return v;
@@ -249,22 +253,24 @@ function init(){
  });
  document.addEventListener('fullscreenchange',()=>{fullscreen.textContent=document.fullscreenElement?'退出全屏':'全屏展示';});
  for(let i=1;i<=8;i++){
-  const groupName={1:'第 1 组',4:'第 2 组',7:'备用'}[i];
-  if(groupName){
-   const group=document.createElement('span');
-   group.className=i===7?'bottle-group reserve-title':'bottle-group';
-   group.textContent=groupName;
-   $('bottles').append(group);
-  }
   const e=document.createElement('button');e.type='button';e.className='bottle';e.id='b'+i;
   e.setAttribute('aria-controls','sample-detail');
-  e.innerHTML='<span class="glass" aria-hidden="true"><b></b></span><strong></strong>';
+  e.innerHTML='<span class="glass" aria-hidden="true"><span class="glass-body"><span class="glass-liquid"></span></span></span><span class="bottle-name"><strong></strong><span class="bottle-purpose"></span></span><span class="bottle-volume"></span>';
+  e.querySelector('strong').textContent='B'+String(i).padStart(2,'0');
   e.addEventListener('click',()=>{
    stop();bottle=i;showBottle=true;render();
    $('sample-detail').scrollIntoView({block:'nearest'});
   });
-  $('bottles').append(e);
+  $(i<=3?'rack-a':i<=6?'rack-b':'rack-spares').append(e);
  }
+ const machineView=document.querySelector('[data-view="machine"]');
+ const showRack=$('show-rack');
+ showRack.addEventListener('click',()=>{
+  if(machineView.disabled)return;
+  machineView.click();
+  machineView.focus({preventScroll:true});
+  $('scene-viewport').scrollIntoView({block:'nearest'});
+ });
  $('show-summary').addEventListener('click',()=>{
   showBottle=false;render();$('results-heading').focus();
  });

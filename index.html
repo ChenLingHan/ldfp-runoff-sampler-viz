@@ -7,9 +7,9 @@
 <meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./dashboard.css?v=workbench-6">
-<script defer src="./dashboard.js?v=workbench-6"></script>
-<script type="module" src="./scene.js?v=workbench-6"></script>
+<link rel="stylesheet" href="./dashboard.css?v=workbench-7">
+<script defer src="./dashboard.js?v=workbench-7"></script>
+<script type="module" src="./scene.js?v=workbench-7"></script>
 </head>
 <body>
 <header class="top"><div class="shell">
@@ -37,7 +37,6 @@
         <div class="steps" id="steps" role="group" aria-label="切换三维采样阶段"></div>
       </div>
     </section>
-    <div class="monitoring">
       <section class="surface trend" aria-labelledby="trend-title">
         <div class="section-head">
           <div class="section-title"><span class="section-number" aria-hidden="true">02</span><h2 id="trend-title">本田出流监测</h2></div>
@@ -76,7 +75,11 @@
           <div class="section-title"><span class="section-number" aria-hidden="true">03</span><h2 id="sample-heading">分瓶留样与检测</h2></div>
           <button class="button" id="csv" type="button">导出 CSV</button>
         </div>
-        <div class="bottle-grid" id="bottles" role="group" aria-label="选择样瓶查看化验结果"></div>
+        <div class="bottle-grid" id="bottles" role="group" aria-label="选择样瓶查看化验结果">
+          <div class="rack"><h3 class="rack-title">第 1 组</h3><div class="rack-slots" id="rack-a"></div></div>
+          <div class="rack"><h3 class="rack-title">第 2 组</h3><div class="rack-slots" id="rack-b"></div></div>
+          <div class="rack reserve-rack"><h3 class="rack-title">备用位</h3><div class="rack-slots" id="rack-spares"></div></div>
+        </div>
         <div class="sample-output">
           <section id="sample-summary" aria-labelledby="results-heading">
             <div class="subhead"><h3 id="results-heading" tabindex="-1">合格区间的输出量</h3><span class="stamp" id="coverage">—</span></div>
@@ -93,7 +96,10 @@
           <section id="sample-detail" aria-labelledby="sample-title" hidden>
             <div class="subhead">
               <h3 id="sample-title">样瓶明细</h3>
-              <button class="button" id="show-summary" type="button" aria-controls="sample-summary">返回汇总</button>
+              <div class="sample-actions">
+                <button class="button" id="show-rack" type="button" aria-controls="scene-viewport">看瓶架</button>
+                <button class="button subtle" id="show-summary" type="button" aria-controls="sample-summary">汇总</button>
+              </div>
             </div>
             <div class="sample-facts">
               <p id="qc">—</p>
@@ -107,7 +113,6 @@
           </section>
         </div>
       </section>
-    </div>
     <noscript>请启用 JavaScript 以浏览监测工作台</noscript>
 </main>
 <dialog class="detail-dialog" id="route-dialog" aria-labelledby="stage">
