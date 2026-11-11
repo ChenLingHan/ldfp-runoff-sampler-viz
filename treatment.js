@@ -98,20 +98,6 @@
   $('monitor-card').dataset.mode=water?'water':'flow';
   tabs.forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
  }));
- const eng=$('engineering-toggle'), view=$('scene-viewport');
- function showEngineering(show){
-  eng.setAttribute('aria-pressed',String(show));
-  view.dataset.engineering=String(show);
-  if(show)document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed','false'));
- }
- eng.addEventListener('click',()=>showEngineering(eng.getAttribute('aria-pressed')!=='true'));
- document.querySelectorAll('[data-view], #show-rack').forEach(btn=>btn.addEventListener('click',()=>showEngineering(false),{capture:true}));
- $('steps').addEventListener('click',e=>{
-  const btn=e.target.closest('button');
-  if(!btn||view.dataset.engineering!=='true')return;
-  const step=[...$('steps').children].indexOf(btn), target=document.querySelector(`[data-view=${step>=3?'valve':'machine'}]`);
-  if(step>0&&!target.disabled)target.click();
- });
  $('sheet-zoom').addEventListener('click',()=> $('engineering-dialog').showModal());
  $('treatment-rules').addEventListener('click',()=> $('treatment-dialog').showModal());
 })();
