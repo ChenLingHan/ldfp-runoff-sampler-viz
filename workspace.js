@@ -5,6 +5,31 @@ const stage = $('cad-stage');
 const componentButtons = [...document.querySelectorAll('[data-component]')];
 const cameraButtons = [...document.querySelectorAll('[data-camera]')];
 const workspaces = [...document.querySelectorAll('[data-workspace]')];
+const fieldButton = $('field-mode');
+const fieldHost = $('field-replay');
+const fieldViewport = $('scene-viewport');
+const fieldCard = fieldViewport.parentElement;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const timeline = $('timeline');
+$('replay-monitor').append($('monitor-card'));
+$('replay-steps').append($('purification-steps'));
+$('replay-review').append($('review-demo'));
+
+let fieldMode = false;
+function showField(show) {
+  fieldMode = show;
+  fieldButton.setAttribute('aria-pressed', String(show));
+  stage.classList.toggle('show-field',show);
+  fieldHost.hidden = !show;
+  if (show) {
+    fieldHost.append(fieldViewport);
+    document.querySelector('[data-view=field]').click();
+    for (const button of cameraButtons) button.setAttribute('aria-pressed','false');
+  } else {
+    fieldCard.insertBefore(fieldViewport,fieldCard.querySelector('.process'));
+  }
+}
+fieldButton.addEventListener('click', () => showField(true));
 const components = {
   Q0: ['田块量水槽', '300 × 180 × 150 mm', '三角薄壁口上游的水位用于换算流量。槽后设置独立的取样嘴，主水路靠落差进入调蓄箱。'],
   S1: ['原水留样', '450 × 350 × 350 mm · 8 瓶位', '原水在净化前取样。电动三通阀先隔离取样口，再将反转清管的残液导入独立废液罐。'],
@@ -22,9 +47,17 @@ for (const button of workspaces) {
       tab.setAttribute('aria-pressed', String(active));
       $(tab.dataset.workspace).hidden = !active;
     }
+    if (selected === 'monitoring') {
+      fieldCard.insertBefore(fieldViewport,fieldCard.querySelector('.process'));
+      $('record-timeline').append(timeline);
+    } else {
+      $('replay-timeline').append(timeline);
+      if (fieldMode) showField(true);
+    }
   });
 }
 $('sheet-zoom').addEventListener('click', () => $('engineering-dialog').showModal());
+$('part-details').addEventListener('click', () => $('part-dialog').showModal());
 
 function syncStatus() {
   $('cad-water-state').textContent = $('water-state').textContent;
@@ -58,8 +91,32 @@ function inspect(code) {
   updateModel();
 }
 for (const button of componentButtons) {
-  button.addEventListener('click', () => inspect(button.dataset.component));
+  button.addEventListener('click', () => {
+    if (fieldMode) cameraButtons[0].click();
+    inspect(button.dataset.component);
+  });
 }
+
+const fromModel = ([x,y,z]) => new THREE.Vector3(x/1000,z/1000,-y/1000);
+const routeData = [
+  {id:'inlet',color:0x51afe0,points:[[25,210,610],[297,210,610],[338,210,610],[418,210,563],[635,210,548],[635,210,516]]},
+  {id:'sample',color:0xd59c56,points:[[239,185,635],[239,80,635],[239,-10,410],[246,-44,277],[246,-135,275],[246,-220,203]]},
+  {id:'clean',color:0xde9460,points:[[246,-220,203],[246,-135,275],[246,-44,277],[246,-53,251],[246,-84,251]]},
+  {id:'pump',color:0x29afab,points:[[1080,210,74],[1285,210,74],[1285,245,581],[1322,245,581]]},
+  {id:'filter',color:0x29afab,points:[[1457,245,148],[1457,371,148],[1474,371,148],[1474,371,728],[1590,371,728],[1590,245,710],[1590,245,91],
+   [1590,371,91],[1699,371,91],[1699,371,728],[1815,371,728],[1815,245,710],[1815,245,91],
+   [1815,371,91],[1924,371,91],[1924,371,728],[2040,371,728],[2040,245,710],[2040,245,91]]},
+  {id:'outlet',color:0x4acaa3,points:[[2040,245,91],[2040,378,91],[2291,378,91],[2291,250,207],[2410,250,207]]},
+  {id:'release',color:0x4acaa3,points:[[2820,249,70],[2870,249,70],[3002,249,70],[3080,249,24]]}
+];
+const callouts = {
+  Q0:[[116,200,804],'量水槽'],
+  S1:[[222,-237,362],'原水留样'],
+  TK1:[[790,190,535],'原水调蓄'],
+  F1:[[1730,240,808],'净化模块'],
+  TK2:[[2560,230,437],'待检箱'],
+  V2:[[2895,250,175],'排放阀']
+};
 
 function geometry([vertices, faces]) {
   const positions = new Float32Array(vertices.length);
@@ -109,6 +166,39 @@ async function loadAssembly() {
   const grid = new THREE.GridHelper(4.5, 30, 0xa2b8c0, 0xcbd9de);
   grid.position.set(1.5, -.002, 0);
   scene.add(grid);
+  const dotCanvas=document.createElement('canvas');
+  dotCanvas.width=dotCanvas.height=32;
+  const dotPaint=dotCanvas.getContext('2d');
+  const dotFill=dotPaint.createRadialGradient(16,16,5,16,16,16);
+  dotFill.addColorStop(0,'#fff');
+  dotFill.addColorStop(1,'#ffffff00');
+  dotPaint.fillStyle=dotFill;
+  dotPaint.fillRect(0,0,32,32);
+  const dotTexture=new THREE.CanvasTexture(dotCanvas);
+  const routes=routeData.map(({id,color,points})=>{
+    const linePoints=points.map(fromModel);
+    const path=new THREE.CurvePath();
+    for(let i=1;i<linePoints.length;i++)path.add(new THREE.LineCurve3(linePoints[i-1],linePoints[i]));
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePoints),
+      new THREE.LineBasicMaterial({color,transparent:true,opacity:.75,depthTest:false,depthWrite:false}));
+    line.renderOrder=4;
+    const dots=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3)),
+      new THREE.PointsMaterial({color,size:7,map:dotTexture,transparent:true,sizeAttenuation:false,depthTest:false,depthWrite:false}));
+    dots.renderOrder=5;
+    dots.frustumCulled=false;
+    const group=new THREE.Group();
+    group.add(line,dots);
+    group.visible=false;
+    scene.add(group);
+    return {id,path,dots,group};
+  });
+  const cues=Object.entries(callouts).map(([code,[point,label]])=>{
+    const el=document.createElement('span');
+    el.textContent=label;
+    el.hidden=true;
+    $('scene-cues').append(el);
+    return {code,point:fromModel(point),el};
+  });
   const models = parts.map(part => {
     const base = new THREE.Color(part.color);
     const material = new THREE.MeshStandardMaterial({color: base, roughness: .67, metalness: .11});
@@ -134,13 +224,15 @@ async function loadAssembly() {
   };
   let mode = 'iso';
   let focused = false;
+  let treatment = window.runoffTreatmentState;
+  let sampling = window.runoffSceneState;
   let [azimuth, polar] = cameraAngles.iso;
   let zoom = 1;
   let gesture = null;
   const ray = new THREE.Raycaster();
   const cursor = new THREE.Vector2();
   function draw() {
-    if (!stage.clientWidth || !stage.clientHeight) return;
+    if (fieldMode || !stage.clientWidth || !stage.clientHeight || renderer.getContext().isContextLost()) return;
     const aspect = stage.clientWidth / stage.clientHeight;
     bounds.getCenter(activeCenter);
     const size = bounds.getSize(new THREE.Vector3());
@@ -164,7 +256,41 @@ async function loadAssembly() {
     camera.bottom = -extent;
     camera.top = extent;
     camera.updateProjectionMatrix();
+    updateRoutes();
     renderer.render(scene, camera);
+  }
+  function updateRoutes() {
+    const online=treatment?.mode==='preview'||treatment?.mode==='live';
+    const phase=treatment?.state;
+    const showWater=online&&treatment.flow>=.05;
+    const sampleStage=online?sampling?.stage:0;
+    const routeActive={
+      inlet:showWater, sample:sampleStage===1||sampleStage===2, clean:sampleStage===4,
+      pump:phase==='treat', filter:phase==='treat', outlet:phase==='treat',
+      release:phase==='release'&&treatment.valve==='open'
+    };
+    const time=reduceMotion.matches?0:performance.now()/2600;
+    for(const {id,path,dots,group} of routes){
+      group.visible=Boolean(routeActive[id])&&(mode!=='cut'||id==='filter');
+      if(!group.visible)continue;
+      const vertices=dots.geometry.getAttribute('position');
+      for(let i=0;i<vertices.count;i++){
+        const p=path.getPoint((time+i/vertices.count)%1);
+        vertices.setXYZ(i,p.x,p.y,p.z);
+      }
+      vertices.needsUpdate=true;
+    }
+    const active=phase==='release'?['V2']:phase==='treat'?['F1','TK2']:phase==='hold'||phase==='fault'?['TK2']:showWater?['Q0','TK1']:[];
+    if(sampleStage)active.push('S1');
+    for(const {code,point,el} of cues){
+      const p=point.clone().project(camera);
+      const inView=Math.abs(p.x)<.84&&Math.abs(p.y)<.85;
+      el.hidden=!inView||(mode==='cut'?code!=='F1':!(active.includes(code)||selected===code));
+      if(el.hidden)continue;
+      el.classList.toggle('is-active',active.includes(code));
+      el.style.left=((p.x+1)*50)+'%';
+      el.style.top=((1-p.y)*50)+'%';
+    }
   }
   function paint() {
     bounds.makeEmpty();
@@ -180,6 +306,7 @@ async function loadAssembly() {
     draw();
   }
   function selectView(next) {
+    if(fieldMode)showField(false);
     mode = next;
     focused = false;
     $('media-legend').hidden = next !== 'cut';
@@ -198,6 +325,8 @@ async function loadAssembly() {
   for (const button of cameraButtons) button.addEventListener('click', () => selectView(button.dataset.camera));
   $('cad-reset').addEventListener('click', () => selectView(mode));
   $('cad-focus').addEventListener('click', () => {
+    $('part-dialog').close();
+    if(fieldMode)selectView('iso');
     focused = true;
     zoom = 1;
     paint();
@@ -254,6 +383,15 @@ async function loadAssembly() {
     draw();
   });
   observer.observe(stage);
+  window.addEventListener('runoff:treatment-state',event=>{treatment=event.detail;draw();});
+  window.addEventListener('runoff:scene',event=>{sampling=event.detail;draw();});
+  let lastFrame=0;
+  renderer.setAnimationLoop(time=>{
+    if(document.hidden||fieldMode||reduceMotion.matches||time-lastFrame<38||
+       !routes.some(route=>route.group.visible))return;
+    lastFrame=time;
+    draw();
+  });
   stage.classList.add('ready');
   $('cad-reset').hidden = false;
   $('cad-focus').hidden = false;

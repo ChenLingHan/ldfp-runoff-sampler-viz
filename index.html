@@ -8,11 +8,12 @@
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./dashboard.css?v=purification-1">
-<link rel="stylesheet" href="./workspace.css?v=cad-1">
-<script defer src="./treatment.js?v=cad-1"></script>
-<script defer src="./dashboard.js?v=purification-1"></script>
+<link rel="stylesheet" href="./workspace.css?v=replay-1">
+<link rel="stylesheet" href="./replay.css?v=replay-1">
+<script defer src="./treatment.js?v=replay-1"></script>
+<script defer src="./dashboard.js?v=replay-1"></script>
 <script type="module" src="./scene.js?v=purification-1"></script>
-<script type="module" src="./workspace.js?v=cad-1"></script>
+<script type="module" src="./workspace.js?v=replay-1"></script>
 </head>
 <body>
 <header class="top"><div class="shell">
@@ -25,19 +26,20 @@
 <main>
   <div class="shell workspace-nav">
     <nav aria-label="工作台功能">
-      <button type="button" data-workspace="assembly" aria-pressed="true" aria-controls="assembly">设备与工程图</button>
-      <button type="button" data-workspace="monitoring" aria-pressed="false" aria-controls="monitoring">监测与留样</button>
+      <button type="button" data-workspace="assembly" aria-pressed="true" aria-controls="assembly">过程演示</button>
+      <button type="button" data-workspace="monitoring" aria-pressed="false" aria-controls="monitoring">留样与化验</button>
     </nav>
   </div>
-  <section class="shell cad-workspace" id="assembly" aria-label="设备与工程图">
+  <section class="shell cad-workspace replay-workspace" id="assembly" aria-label="径流过程演示">
     <section class="cad-main" aria-labelledby="cad-title">
       <header class="cad-head">
-        <h2 id="cad-title">监测净化台架</h2>
+        <h2 id="cad-title">三维径流过程</h2>
         <div class="cad-view-controls" role="group" aria-label="装配模型视角">
           <button type="button" data-camera="iso" aria-pressed="true">轴测</button>
           <button type="button" data-camera="front" aria-pressed="false">正视</button>
           <button type="button" data-camera="plan" aria-pressed="false">俯视</button>
           <button type="button" data-camera="cut" aria-pressed="false">净化剖切</button>
+          <button type="button" id="field-mode" aria-pressed="false">田块</button>
         </div>
       </header>
       <div class="cad-stage" id="cad-stage">
@@ -47,14 +49,10 @@
         <div class="media-legend" id="media-legend" aria-label="剖切图填料" hidden>
           <span><i></i>沸石 6 L</span><span><i></i>硝态氮树脂 6 L</span><span><i></i>铁系介质 18 L</span>
         </div>
+        <div class="scene-cues" id="scene-cues" aria-hidden="true"></div>
+        <div id="field-replay" hidden></div>
       </div>
-      <footer class="cad-main-foot">
-        <span id="cad-interaction">拖动旋转 · 滚轮缩放 · 点击部件查看</span>
-        <button class="button" id="sheet-zoom" type="button" aria-haspopup="dialog" aria-controls="engineering-dialog">打开工程图册</button>
-      </footer>
-    </section>
-    <aside class="cad-inspector" aria-labelledby="component-heading">
-      <h2 id="component-heading">部件索引</h2>
+    <div class="cad-inspector" aria-label="部件索引">
       <div class="component-list" role="group" aria-label="定位设备部件">
         <button type="button" data-component="Q0" aria-pressed="true"><b>Q0</b><span>田块量水槽</span></button>
         <button type="button" data-component="S1" aria-pressed="false"><b>S1</b><span>原水留样</span></button>
@@ -63,16 +61,24 @@
         <button type="button" data-component="TK2" aria-pressed="false"><b>TK2</b><span>出水待检</span></button>
         <button type="button" data-component="V2" aria-pressed="false"><b>V2</b><span>排放联锁</span></button>
       </div>
-      <section class="component-detail" aria-live="polite">
-        <h3 id="component-title">Q0 · 田块量水槽</h3>
-        <strong id="component-spec">300 × 180 × 150 mm</strong>
-        <p id="component-description">田块径流通过三角薄壁口，水位测点换算流量。取样支管与主水路分开布置。</p>
-        <button class="button" id="cad-focus" type="button" hidden>定位部件</button>
-      </section>
-      <div class="cad-live"><span>回放工况 <strong id="cad-water-state">—</strong></span><span>排放阀 <strong id="cad-water-valve">—</strong></span></div>
-    </aside>
+    </div>
+      <footer class="cad-main-foot">
+        <span id="cad-interaction">拖动旋转 · 滚轮缩放</span>
+        <div class="cad-footer-actions">
+          <button class="button" id="part-details" type="button" aria-haspopup="dialog" aria-controls="part-dialog">部件详情</button>
+          <button class="button" id="sheet-zoom" type="button" aria-haspopup="dialog" aria-controls="engineering-dialog">工程图册</button>
+        </div>
+      </footer>
+    </section>
+    <div id="replay-monitor"></div>
+    <section class="surface replay-process" aria-label="净化阶段">
+      <div class="cad-live"><span>当前工况 <strong id="cad-water-state">—</strong></span><span>排放阀 <strong id="cad-water-valve">—</strong></span></div>
+      <div id="replay-steps"></div>
+      <div id="replay-review"></div>
+    </section>
   </section>
-  <section class="shell dashboard" id="monitoring" aria-label="监测与留样" hidden>
+  <section class="shell dashboard record-view" id="monitoring" aria-label="留样与化验" hidden>
+    <div id="record-timeline"></div>
     <section class="surface scene-card" aria-labelledby="scene-title">
       <div class="section-head scene-head">
         <div class="section-title"><h2 id="scene-title">原水留样回放</h2></div>
@@ -92,10 +98,10 @@
         <div class="steps" id="steps" role="group" aria-label="切换三维采样阶段"></div>
       </div>
     </section>
-      <section class="surface trend" id="monitor-card" data-mode="water" aria-labelledby="trend-title">
+      <section class="surface trend" id="monitor-card" data-mode="flow" aria-labelledby="trend-title">
         <div class="section-head">
           <div class="section-title"><h2 id="trend-title">田块监测</h2></div>
-          <div class="view-switch monitor-switch" role="group" aria-label="切换监测面板"><button type="button" data-monitor-tab="water" aria-pressed="true" aria-controls="water-panel">水质与放行</button><button type="button" data-monitor-tab="flow" aria-pressed="false" aria-controls="flow-metrics">雨量与出流</button></div>
+          <div class="view-switch monitor-switch" role="group" aria-label="切换监测面板"><button type="button" data-monitor-tab="flow" aria-pressed="true" aria-controls="flow-metrics">雨量与出流</button><button type="button" data-monitor-tab="water" aria-pressed="false" aria-controls="water-panel">水质与放行</button></div>
         </div>
         <section class="water-panel" id="water-panel" aria-label="水质与排放状态">
           <div class="water-head">
@@ -162,13 +168,13 @@
           <div><span>已有样品的瓶位</span><strong id="filled-count">—</strong></div>
         </div>
         </div>
-        <div class="timeline" id="timeline">
-          <button class="button primary" id="play" type="button">回放事件</button>
+        <div id="replay-timeline"><div class="timeline" id="timeline">
+          <button class="button primary" id="play" type="button">播放演示</button>
           <input type="range" id="seek" aria-label="事件时段" min="0" max="0" value="0">
           <div class="timeline-time"><output id="cursor" for="seek">—</output><span id="duration">—</span></div>
           <select id="pace" aria-label="回放速率"><option value="guide">逐阶段</option><option value="fast">快览</option></select>
           <button class="button restart" id="restart" type="button" aria-label="回到事件起点" title="回到事件起点">↺</button>
-        </div>
+        </div></div>
       </section>
       <section class="surface sample" aria-labelledby="sample-heading">
         <div class="section-head">
@@ -270,6 +276,15 @@
     <img src="./QS-M04.webp?v=cad-1" loading="lazy" alt="近口电动三通阀主视和轴测">
     <img src="./QS-M05.webp?v=cad-1" loading="lazy" alt="净化模块 A–A 剖视及剖切位置">
   </div>
+</dialog>
+<dialog class="detail-dialog" id="part-dialog" aria-labelledby="component-title">
+  <header class="dialog-head">
+    <h2 id="component-title">Q0 · 田块量水槽</h2>
+    <form method="dialog"><button class="button" type="submit" autofocus>关闭</button></form>
+  </header>
+  <p><strong id="component-spec">300 × 180 × 150 mm</strong></p>
+  <p id="component-description">田块径流通过三角薄壁口，水位测点换算流量。取样支管与主水路分开布置。</p>
+  <p><button class="button" id="cad-focus" type="button" hidden>在三维图中定位</button></p>
 </dialog>
 </body>
 </html>

@@ -2,7 +2,8 @@
 (() => {
  const $=id=>document.getElementById(id);
  const rules={ntu:80,no3:3,po4:.25};
- const steps=['汇流监测','定量净化','出水待检','核验排放'];
+ const steps=['汇流监测','定量净化','出水待检','排放核验'];
+ const chapterTimes=[3,10,23,40];
  const names=['浊度','硝态氮','正磷酸盐磷'];
  const units=['NTU','mg N/L','mg P/L'];
  const keys=['ntu','no3','po4'];
@@ -53,7 +54,7 @@
    if(selected===i)li.setAttribute('aria-current','step');
    else li.removeAttribute('aria-current');
   });
-  set('water-state',state==='fault'?'留存告警':steps[selected]??'净化数据未接入');
+  set('water-state',state==='fault'?'留存告警':state==='release'?'核验排放':steps[selected]??'净化数据未接入');
   set('treatment-description',preview&&state==='release'?'次日核验通过 · 30 L 进水，1 L 取样与留存，29 L 排放':notes[state]??'等待本地控制器上传有效的水质和排放记录。');
   set('water-valve',w?.valve==='open'?'开启':w?.valve==='closed'?'关闭':'未确认');
   set('water-stored',amount(w?.storedL));
@@ -70,7 +71,10 @@
   const scenario=$('review-demo');
   scenario.hidden=!preview;
   scenario.querySelectorAll('button').forEach(b=>{b.disabled=point.minute<40;b.setAttribute('aria-pressed',String(b.dataset.review===(point.minute<40?'pending':review)));});
+  $('purification-steps').querySelectorAll('button').forEach(b=>{b.disabled=!preview;});
   set('review-label',preview&&point.minute>=40?'雨后核验演示':'雨后核验');
+  window.runoffTreatmentState={state,flow:point.flowLs,minute:point.minute,mode,valve:w?.valve};
+  window.dispatchEvent(new CustomEvent('runoff:treatment-state',{detail:window.runoffTreatmentState}));
  }
  keys.forEach((k,i)=>{
   set('test-'+k,names[i]);
@@ -78,9 +82,14 @@
   set('threshold-'+k,String(rules[k]));
  });
  const li=steps.map((label,i)=>{
-  const row=document.createElement('li'), counter=document.createElement('span');
-  counter.textContent='0'+(i+1);
-  row.append(counter,label);
+  const row=document.createElement('li'), button=document.createElement('button');
+  button.type='button';
+  button.textContent=label;
+  button.addEventListener('click',()=>{
+   window.dispatchEvent(new CustomEvent('runoff:seek',{detail:chapterTimes[i]}));
+   if(i===3)$('review-demo').querySelector('[data-review=pending]').focus({preventScroll:true});
+  });
+  row.append(button);
   return row;
  });
  $('purification-steps').append(...li);
@@ -98,6 +107,5 @@
   $('monitor-card').dataset.mode=water?'water':'flow';
   tabs.forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
  }));
- $('sheet-zoom').addEventListener('click',()=> $('engineering-dialog').showModal());
  $('treatment-rules').addEventListener('click',()=> $('treatment-dialog').showModal());
 })();

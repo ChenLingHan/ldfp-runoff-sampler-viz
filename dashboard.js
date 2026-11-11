@@ -131,6 +131,9 @@ function chart(points,samples){
  for(let i=0;i<=4;i++)data.append(label(x(maxT*i/4),y1+16,timeLabel.format(maxT*i/4),'middle'));
  const seen=points.slice(0,pos+1),barWidth=Math.min(12,(x1-x0)/43);
  const current=seen.at(-1);
+ if(readStatus==='preview'&&pos<points.length-1){
+  data.append(svg('polyline',{points:points.map(p=>x(p.minute)+','+y(p.flowLs)).join(' '),class:'chart-forecast'}));
+ }
  if(showBottle)for(const slot of samples[bottle-1].slots){
   for(const [start,end] of sourceTimes(slot)){
    data.append(svg('rect',{x:x(start),y:y0,width:Math.max(1,x(end)-x(start)),height:y1-y0,class:'chart-source'}));
@@ -281,7 +284,7 @@ async function poll(){
 }
 function stop(){
  if(timer!==null)clearTimeout(timer);
- timer=null;setText('play','回放事件');
+ timer=null;setText('play','播放演示');
 }
 function nextFrame(enteredStage){
  if(pos>=model.points.length-1){stop();return;}
@@ -379,6 +382,12 @@ function init(){
   $('steps').querySelector('[aria-pressed=true]').focus();
  });
  $('seek').addEventListener('input',()=>{stop();pos=Number($('seek').value);render()});
+ window.addEventListener('runoff:seek',event=>{
+  if(CONFIG.endpoint||!Number.isFinite(event.detail))return;
+  stop();pinned=null;
+  pos=nearestPoint(model.points,event.detail);
+  render();
+ });
  $('restart').addEventListener('click',()=>{stop();pos=0;pinned=null;window.dispatchEvent(new Event('runoff:reset-water'));render();});
  $('play').addEventListener('click',()=>{
   if(timer!==null){stop();return;}

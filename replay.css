@@ -1,0 +1,130 @@
+.replay-workspace {
+  grid-template-columns: minmax(0, 1.53fr) minmax(370px, 1fr);
+  align-items: stretch;
+  padding-block: 14px 18px;
+}
+.replay-workspace .cad-main {
+  display: flex;
+  flex-direction: column;
+}
+.replay-workspace .cad-stage {
+  height: clamp(282px, calc(100dvh - 365px), 590px);
+  min-height: 0;
+  flex: 1 0 auto;
+}
+.replay-workspace .cad-head { padding-block: 10px; }
+.replay-workspace .cad-inspector {
+  padding: 9px 10px 0;
+  border: 0;
+  border-radius: 0;
+  background: white;
+}
+.replay-workspace .component-list {
+  display: grid;
+  grid-template-columns: repeat(6,minmax(0,1fr));
+  gap: 5px;
+}
+.replay-workspace .component-list button {
+  color: var(--ink);
+  background: var(--wash);
+  border-color: var(--line);
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 5px 4px;
+}
+.replay-workspace .component-list button b { color: #416371; }
+.replay-workspace .component-list button[aria-pressed=true] { background: #e1f0eb; border-color: #7faf9f; }
+.replay-workspace .component-list button[aria-pressed=true] b { color: #196756; }
+.cad-main-foot { padding-block: 8px; }
+.cad-footer-actions { display: flex; gap: 6px; }
+#part-dialog #cad-focus { background: var(--wash); color: var(--ink); border-color: var(--line); }
+.scene-cues { position: absolute; inset: 0; pointer-events: none; }
+.scene-cues span {
+  position: absolute;
+  transform: translate(-50%, -110%);
+  border: 1px solid #bccdd3;
+  border-radius: 5px;
+  padding: 3px 7px;
+  color: #18323f;
+  background: #fff;
+  white-space: nowrap;
+  font-weight: 650;
+  font-size: 12px;
+  box-shadow: 0 1px 4px #1e35431c;
+}
+.scene-cues span.is-active { border-color: #5facab; background: #e8f6f4; }
+.show-field > :is(canvas,.cad-fallback,.cad-help,#cad-reset,.media-legend,.scene-cues) { display: none !important; }
+#field-replay, #field-replay .scene-viewport { position: absolute; inset: 0; min-height: 0; border-radius: 0; }
+#replay-monitor { min-width: 0; }
+#replay-monitor .trend { height: 100%; min-height: 0; }
+#replay-monitor .flow-metrics { grid-template-rows: auto auto minmax(210px,1fr) auto; }
+#replay-monitor .plot-frame { height: 100%; }
+#replay-monitor .plot { min-height: 210px; }
+#replay-monitor .event-insights { display: none; }
+#replay-monitor .trend-actions { justify-self: stretch; justify-content: space-between; }
+#replay-monitor .water-panel { justify-content: start; }
+.chart-forecast { fill: none; stroke: #90adb2; opacity: .65; stroke-width: 1.25; stroke-dasharray: 4 4; }
+#replay-timeline { min-width: 0; }
+#replay-timeline .timeline { grid-template-columns: auto minmax(0,1fr) auto auto; }
+#replay-timeline .timeline input { grid-row: 2; grid-column: 1/-1; }
+.replay-process {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: 235px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 13px;
+}
+.replay-process .cad-live {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  color: var(--muted);
+}
+.replay-process .cad-live strong { color: var(--ink); font-size: 15px; }
+.replay-process .purification-steps li { padding: 0; border-radius: 6px; }
+.replay-process .purification-steps button {
+  width: 100%;
+  padding: 8px 4px;
+  color: inherit;
+  border: 0;
+  background: transparent;
+}
+#review-label { white-space: nowrap; }
+.record-view.dashboard { height: auto; grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto auto; margin-block: 0; }
+.record-view .scene-card { min-height: 385px; }
+.record-view .sample { grid-column: 1; }
+.record-view .scene-card .scene-viewport { min-height: 275px; }
+#record-timeline:empty { display: none; }
+@media (min-width: 921px) and (min-height: 680px) {
+  .replay-workspace {
+    height: min(calc(100dvh - 117px),920px);
+    grid-template-rows: minmax(0,1fr) auto;
+  }
+  .replay-workspace .cad-main, #replay-monitor { min-height: 0; }
+  .replay-workspace .cad-stage { height: auto; flex: 1 1 0; }
+  #replay-monitor .flow-metrics { grid-template-rows: auto auto minmax(0,1fr) auto; }
+  #replay-monitor .plot { min-height: 0; }
+}
+@media (max-width: 1120px) {
+  .replay-workspace .component-list { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .replay-process { grid-template-columns: 170px minmax(0,1fr) auto; gap: 8px; }
+}
+@media (max-width: 920px) {
+  .replay-workspace { grid-template-columns: minmax(0,1fr); }
+  .replay-workspace .cad-stage { height: clamp(290px,50vw,500px); }
+  .replay-process { grid-template-columns: minmax(0,1fr) auto; }
+  #replay-steps { grid-row: 2; grid-column: 1/-1; }
+}
+@media (max-width: 520px) {
+  .replay-workspace .cad-view-controls { max-width: 100%; flex-wrap: wrap; }
+  .replay-workspace .cad-head h2 { font-size: 17px; }
+  .replay-process { grid-template-columns: minmax(0,1fr); }
+  #replay-steps { grid-row: auto; }
+  .replay-process .cad-live { grid-template-columns: 1fr 1fr; }
+  .replay-workspace .cad-main-foot > span { flex: 0 1 auto; }
+  .record-view .scene-card { min-height: 330px; }
+  .record-view .scene-card .scene-viewport { min-height: 230px; }
+}
