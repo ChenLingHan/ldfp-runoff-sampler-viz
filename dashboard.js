@@ -62,7 +62,8 @@ function fieldPreview(){
   const mm=t%120===0?rain[t/120]||0:0;
   depth+=mm;
   const i=Math.floor(t/timeStep),v=cumulative[i]+(t-i*timeStep)*discharge(t);
-  return {minute:t/60,flowLs:discharge(t),rainMm:mm,rainTotalMm:depth,volumeL:v,stage};
+  const sampledL=cycle<0?0:cycle*.44182+(Math.min(age,10.64)+[0,9,18].reduce((n,offset)=>n+Math.min(7.5,Math.max(0,age-10.64-offset)),0))*.8/60;
+  return {minute:t/60,flowLs:discharge(t),rainMm:mm,rainTotalMm:depth,volumeL:v,stage,sampledL};
  });
  [{sscMgL:1060},{tnMgL:2.41},{tpMgL:.24},{sscMgL:710},{tnMgL:1.87},{tpMgL:.17}]
   .forEach((lab,i)=>{if(bottles[i].slots.length===3)bottles[i].lab={...lab,status:'released'};});
@@ -108,6 +109,7 @@ function hideChartTip(){
 }
 function chart(points,samples){
  const canvas=$('chart'), data=$('chart-data'), width=Math.max(260,canvas.clientWidth),height=Math.max(94,canvas.clientHeight);
+ if(!canvas.clientWidth||!canvas.clientHeight)return;
  canvas.setAttribute('viewBox',`0 0 ${width} ${height}`);
  const maxT=points.at(-1).minute||1,
        maxF=Math.max(.2,Math.ceil(Math.max(...points.map(p=>p.flowLs))*5)/5),
@@ -158,6 +160,7 @@ const sourceTimes=s=>model.grouped&&s.sourceWindows?s.sourceWindows:[[s.sourceSt
 const formatWindows=s=>sourceTimes(s).map(([start,end])=>mm(start)+'–'+mm(end)).join(' + ');
 function render(){
  const p=model.points[pos],bs=visibleBottles(),b=bs[bottle-1],filled=bs.filter(n=>n.slots.length);
+ window.dispatchEvent(new CustomEvent('runoff:water',{detail:{point:p,mode:readStatus,telemetry:model.treatment}}));
  setText('rain',num(p.rainTotalMm));setText('flow',num(p.flowLs,3));setText('volume',num(p.volumeL,2));
  const peak=model.points.slice(0,pos+1).reduce((a,point)=>point.flowLs>a.flowLs?point:a);
  setText('peak-flow',num(peak.flowLs,3)+' L/s · T+'+mm(peak.minute));
@@ -273,7 +276,7 @@ async function poll(){
   if(when>Date.now()+CONFIG.staleMs||(asOf!==null&&when<asOf))throw Error('timestamp out of order');
   model={...data,grouped:false};asOf=when;pos=model.points.length-1;
   connectStatus(Date.now()-when>CONFIG.staleMs?'stale':'live');render();
- }catch{connectStatus(asOf===null?'error':'stale');}
+ }catch{connectStatus(asOf===null?'error':'stale');render();}
  finally{setTimeout(poll,CONFIG.intervalMs);}
 }
 function stop(){
@@ -376,10 +379,10 @@ function init(){
   $('steps').querySelector('[aria-pressed=true]').focus();
  });
  $('seek').addEventListener('input',()=>{stop();pos=Number($('seek').value);render()});
- $('restart').addEventListener('click',()=>{stop();pos=0;pinned=null;render();});
+ $('restart').addEventListener('click',()=>{stop();pos=0;pinned=null;window.dispatchEvent(new Event('runoff:reset-water'));render();});
  $('play').addEventListener('click',()=>{
   if(timer!==null){stop();return;}
-  if(pos===model.points.length-1)pos=0;
+  if(pos===model.points.length-1){pos=0;window.dispatchEvent(new Event('runoff:reset-water'));}
   pinned=null;render();setText('play','暂停');nextFrame(true);
  });
  $('csv').addEventListener('click',()=>{
@@ -392,7 +395,7 @@ function init(){
   const url=URL.createObjectURL(new Blob(['\uFEFF'+lines.map(l=>l.map(escape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download='qingyang-bottles.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
  });
- if(CONFIG.endpoint){$('timeline').hidden=true;$('timeline').style.display='none';connectStatus('loading');poll();}
+ if(CONFIG.endpoint){$('timeline').hidden=true;$('timeline').style.display='none';connectStatus('loading');render();poll();}
  else {pos=preview.points.length-1;render();}
 }
 function selectBottle(id,reveal){

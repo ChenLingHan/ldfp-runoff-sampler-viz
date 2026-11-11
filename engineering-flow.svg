@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 443" font-family="Microsoft YaHei, PingFang SC, sans-serif" role="img">
+<rect x="0" y="0" width="920" height="443" rx="0" fill="#ffffff" stroke="none" stroke-width="1.4"/>
+<rect x="2" y="2" width="916" height="439" rx="0" fill="none" stroke="#bccbd0" stroke-width="1.4"/>
+<polyline points="2,49 918,49" fill="none" stroke="#bccbd0" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="19" y="25" text-anchor="start" dominant-baseline="central" fill="#21343d" font-size="23" font-weight="700">田块径流监测与净化系统水路图</text>
+<text x="902" y="25" text-anchor="end" dominant-baseline="central" fill="#52636b" font-size="16" font-weight="700">QS-P01</text>
+<text x="36" y="75" text-anchor="start" dominant-baseline="central" fill="#52636b" font-size="15" font-weight="700">主水路</text>
+<rect x="28" y="89" width="180" height="83" rx="5" fill="#eaf4f7" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="118.0" y="105" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">Q0</text>
+<text x="118.0" y="128" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">田块低位出口</text>
+<text x="118.0" y="153" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">量水段｜自由出流</text>
+<rect x="255" y="89" width="180" height="83" rx="5" fill="#eaf4f7" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="345.0" y="105" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">A1</text>
+<text x="345.0" y="128" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">原水监测</text>
+<text x="345.0" y="153" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">浊度｜硝态氮｜正磷</text>
+<rect x="482" y="89" width="180" height="83" rx="5" fill="#eaf4f7" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="572.0" y="105" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">TK1</text>
+<text x="572.0" y="128" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">进水调蓄箱</text>
+<text x="572.0" y="153" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">液位联锁｜分批送水</text>
+<rect x="709" y="89" width="180" height="83" rx="5" fill="#f8f0e3" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="799.0" y="105" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">F1</text>
+<text x="799.0" y="128" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">净化模块</text>
+<text x="799.0" y="153" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">沉降｜过滤｜填料</text>
+<polyline points="208,130 254,130" fill="none" stroke="#246381" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="254.00,130.00 245.00,125.50 245.00,134.50" fill="#246381"/>
+<polyline points="435,130 481,130" fill="none" stroke="#246381" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="481.00,130.00 472.00,125.50 472.00,134.50" fill="#246381"/>
+<polyline points="662,130 708,130" fill="none" stroke="#246381" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="708.00,130.00 699.00,125.50 699.00,134.50" fill="#246381"/>
+<text x="684" y="102" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="13" font-weight="700">V1</text>
+<polyline points="799,172 799,234" fill="none" stroke="#236b51" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="799.00,234.00 803.50,225.00 794.50,225.00" fill="#236b51"/>
+<rect x="28" y="235" width="180" height="83" rx="5" fill="#eaf4ee" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="118.0" y="251" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">V2</text>
+<text x="118.0" y="274" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">核验后排放</text>
+<text x="118.0" y="299" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">默认关闭｜重力外排</text>
+<rect x="255" y="235" width="180" height="83" rx="5" fill="#eaf4ee" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="345.0" y="251" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">TK2</text>
+<text x="345.0" y="274" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">待检清水箱</text>
+<text x="345.0" y="299" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">按批次隔离｜高低液位</text>
+<rect x="482" y="235" width="180" height="83" rx="5" fill="#eaf4ee" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="572.0" y="251" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">A2</text>
+<text x="572.0" y="274" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">出水复测</text>
+<text x="572.0" y="299" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">在线质控｜取化验样</text>
+<rect x="709" y="235" width="180" height="83" rx="5" fill="#eaf4ee" stroke="#bccbd0" stroke-width="1.4"/>
+<text x="799.0" y="251" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="700">FM1</text>
+<text x="799.0" y="274" text-anchor="middle" dominant-baseline="central" fill="#21343d" font-size="20" font-weight="700">处理流量计</text>
+<text x="799.0" y="299" text-anchor="middle" dominant-baseline="central" fill="#52636b" font-size="14" font-weight="400">定量处理｜核对水量</text>
+<polyline points="709,277 663,277" fill="none" stroke="#236b51" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="663.00,277.00 672.00,281.50 672.00,272.50" fill="#236b51"/>
+<polyline points="482,277 436,277" fill="none" stroke="#236b51" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="436.00,277.00 445.00,281.50 445.00,272.50" fill="#236b51"/>
+<polyline points="255,277 209,277" fill="none" stroke="#236b51" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="209.00,277.00 218.00,281.50 218.00,272.50" fill="#236b51"/>
+<polyline points="231,130 231,201 74,201" fill="none" stroke="#946032" stroke-width="2" stroke-linejoin="round" stroke-dasharray="7 5"/>
+<polyline points="74,201 41,201" fill="none" stroke="#946032" stroke-width="2" stroke-linejoin="round" stroke-dasharray="7 5"/>
+<polygon points="41.00,201.00 49.00,205.00 49.00,197.00" fill="#946032"/>
+<text x="48" y="186" text-anchor="start" dominant-baseline="central" fill="#946032" font-size="14" font-weight="700">支路 S1  净化前留样</text>
+<polyline points="345,318 345,353 394,353" fill="none" stroke="#946032" stroke-width="2" stroke-linejoin="round" stroke-dasharray="7 5"/>
+<polygon points="394.00,353.00 386.00,349.00 386.00,357.00" fill="#946032"/>
+<text x="408" y="353" text-anchor="start" dominant-baseline="central" fill="#946032" font-size="15" font-weight="400">复测不通过：封存／人工转运复处理</text>
+<polyline points="2,383 918,383" fill="none" stroke="#bccbd0" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="29,410 69,410" fill="none" stroke="#246381" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="69.00,410.00 60.00,405.50 60.00,414.50" fill="#246381"/>
+<text x="79" y="410" text-anchor="start" dominant-baseline="central" fill="#21343d" font-size="16" font-weight="400">进水与处理</text>
+<polyline points="225,410 265,410" fill="none" stroke="#236b51" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="265.00,410.00 256.00,405.50 256.00,414.50" fill="#236b51"/>
+<text x="276" y="410" text-anchor="start" dominant-baseline="central" fill="#21343d" font-size="16" font-weight="400">待检及排放</text>
+<polyline points="424,410 464,410" fill="none" stroke="#946032" stroke-width="2" stroke-linejoin="round" stroke-dasharray="7 5"/>
+<text x="474" y="410" text-anchor="start" dominant-baseline="central" fill="#21343d" font-size="16" font-weight="400">取样或异常处置</text>
+<text x="891" y="410" text-anchor="end" dominant-baseline="central" fill="#52636b" font-size="15" font-weight="400">功能图｜非比例</text>
+</svg>

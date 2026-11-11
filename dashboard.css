@@ -571,3 +571,101 @@ h3 { margin: 0; font-size: var(--text-body); }
   .brand { gap: 6px; }
   .top .shell { gap: 6px; }
 }
+
+/* Engineering sheet and batch treatment view. The readout changes without resizing the cards. */
+.engineering-sheet { display: none; }
+.scene-viewport[data-engineering=true] {
+  background: #f1f5f5;
+  border: 1px solid #dae4e4;
+}
+.scene-viewport[data-engineering=true] :is(canvas, .model-label, .scene-legend, .scene-help, .poster, .reset-view) { display: none; }
+.scene-viewport[data-engineering=true] .engineering-sheet {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  padding: 10px 10px 39px;
+  background-image: radial-gradient(#d7e2e1 1px, transparent 1px);
+  background-size: 13px 13px;
+}
+.engineering-sheet img { display: block; width: 100%; height: 100%; object-fit: contain; min-height: 0; }
+.engineering-sheet .sheet-zoom { position: absolute; bottom: 7px; right: 8px; }
+.engineering-dialog { width: min(980px, calc(100vw - 24px)); }
+.drawing-scroll { display: grid; gap: 12px; overflow: auto; max-height: 73dvh; margin-top: 12px; }
+.drawing-scroll img { display: block; width: 100%; min-width: 640px; }
+
+.trend { grid-template-rows: auto minmax(0, 1fr) auto; }
+.flow-metrics { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; min-height: 0; gap: 6px; }
+.flow-metrics .trend-actions { justify-self: end; }
+.trend[data-mode=water] .flow-metrics, .trend[data-mode=flow] .water-panel { display: none; }
+.water-panel {
+  min-height: 0; overflow: auto; scrollbar-width: thin;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  gap: clamp(5px, .7vh, 10px);
+  font-variant-numeric: tabular-nums;
+}
+.water-panel > * { flex: 0 0 auto; }
+.water-head {
+  display: flex; align-items: center; gap: 9px; padding: 7px 10px;
+  background: var(--wash); border: 1px solid var(--line); border-radius: 8px;
+}
+.water-head > div { display: grid; margin-right: auto; min-width: 0; }
+.water-kicker { color: var(--muted); font-size: var(--text-small); }
+#water-state { font-size: clamp(16px, 1.3vw, 21px); }
+.valve-status { white-space: nowrap; color: var(--muted); font-size: var(--text-small); }
+.valve-status b { margin-left: 4px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); }
+[data-stage=release] .valve-status b { color: var(--green); background: #dcefe1; border-color: #a7c9b0; }
+[data-stage=fault] .water-head { background: #fff2e2; border-color: #ebccab; }
+[data-stage=fault] .valve-status b, .quality-grid .over { color: #934b18; font-weight: 700; }
+.purification-steps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; padding: 0; margin: 0; list-style: none; }
+.purification-steps li {
+  display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;
+  padding: 5px 2px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: var(--text-small);
+}
+.purification-steps li span { opacity: .8; font-size: 11px; }
+.purification-steps .done { background: var(--wash); }
+.purification-steps .active { border-color: #a4c4ac; background: var(--selected); color: var(--green); font-weight: 700; }
+.treatment-description { margin: 0; color: var(--muted); font-size: var(--text-small); }
+.quality-grid { border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
+.quality-grid table { width: 100%; border-collapse: collapse; text-align: right; }
+.quality-grid caption { text-align: left; font-weight: 700; padding-bottom: 2px; }
+.quality-grid th, .quality-grid td { padding: 2px 2px; }
+.quality-grid tr > :first-child { text-align: left; }
+.quality-grid thead th, .quality-grid small { font-size: var(--text-small); color: var(--muted); font-weight: 400; }
+.quality-grid tbody tr { border-top: 1px solid #e8eee9; }
+.quality-grid tbody th { font-weight: 550; }
+.quality-grid tbody td:last-child { color: var(--muted); }
+.water-totals {
+  margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  background: var(--wash); padding: 5px 0; border-radius: 7px;
+}
+.water-totals div { padding-inline: 8px; border-right: 1px solid var(--line); }
+.water-totals div:last-child { border: 0; }
+.water-totals dt { color: var(--muted); font-size: var(--text-small); }
+.water-totals dd { margin: 1px 0 0; font-weight: 700; white-space: nowrap; }
+.review-demo { display: flex; gap: 5px; justify-content: space-between; align-items: center; }
+.review-demo[hidden] { display: none; }
+.review-demo .view-switch { padding-block: 2px; }
+.review-demo .view-switch button:disabled { opacity: .65; }
+[data-stage=fault] .treatment-description { color: #934b18; }
+@media (min-width: 1000px) and (max-height: 820px) {
+  .water-kicker { display: none; }
+  .water-panel { gap: 3px; }
+  .water-head { padding-block: 3px; }
+  .quality-grid { padding-block: 3px; }
+  .quality-grid caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .quality-grid th, .quality-grid td { padding-block: 1px; }
+  .water-totals { padding-block: 3px; }
+  .purification-steps li { padding-block: 3px; }
+}
+@media (max-width: 960px) {
+  .trend[data-mode=flow] { min-height: 430px; }
+  .water-panel { overflow: visible; }
+  .engineering-sheet img { max-height: 65vh; }
+}
+@media (max-width: 500px) {
+  .water-head { gap: 5px; padding-inline: 6px; }
+  .water-totals div { padding-inline: 5px; }
+  .quality-grid small { display: block; }
+}
+@media (max-width: 360px) {
+  .purification-steps li span { display: none; }
+  .water-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 5px; }
+}

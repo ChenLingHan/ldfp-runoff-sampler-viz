@@ -214,6 +214,7 @@ try {
   renderer.shadowMap.enabled=true;
   renderer.shadowMap.type=T.PCFSoftShadowMap;
   const canvas=renderer.domElement;
+  canvas.style.removeProperty('display');
   canvas.tabIndex=0;
   canvas.setAttribute('aria-label','三维设备场景，方向键旋转，加减键缩放');
   viewport.prepend(canvas);
@@ -245,7 +246,7 @@ try {
       if(anchor)el.dataset.anchor=anchor;
       viewport.append(el);labelEls.push(el);
     });
-    buttons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.view===key)));
+    buttons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.view===key&&viewport.dataset.engineering!=='true')));
     invalid=true;
   }
 

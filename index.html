@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#fdfefa">
-<meta name="description" content="清样田守田块径流工作台，查看本田出流、低扰动留样和实验室检测。">
+<meta name="description" content="清样田守田块径流工作台，查看在线水质、低扰动留样、分批净化和出口复核。">
 <title>清样田守 · 田块径流工作台</title>
 <link rel="icon" href="./field-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./dashboard.css?v=workbench-9">
-<script defer src="./dashboard.js?v=workbench-9"></script>
-<script type="module" src="./scene.js?v=workbench-8"></script>
+<link rel="stylesheet" href="./dashboard.css?v=purification-1">
+<script defer src="./treatment.js?v=purification-1"></script>
+<script defer src="./dashboard.js?v=purification-1"></script>
+<script type="module" src="./scene.js?v=purification-1"></script>
 </head>
 <body>
 <header class="top"><div class="shell">
@@ -22,10 +23,16 @@
 <main class="shell dashboard">
     <section class="surface scene-card" aria-labelledby="scene-title">
       <div class="section-head scene-head">
-        <div class="section-title"><span class="section-number" aria-hidden="true">01</span><h2 id="scene-title">田间布设与取样</h2></div>
-        <div class="view-switch" role="group" aria-label="三维视角"><button type="button" data-view="field" aria-pressed="true" disabled>田块</button><button type="button" data-view="outlet" aria-pressed="false" disabled>出口特写</button><button type="button" data-view="machine" aria-pressed="false" disabled>主机剖视</button><button type="button" data-view="valve" aria-pressed="false" disabled>阀组</button></div>
+        <div class="section-title"><span class="section-number" aria-hidden="true">01</span><h2 id="scene-title">系统水路与设备</h2></div>
+        <div class="view-switch" role="group" aria-label="工程图与三维视角"><button type="button" id="engineering-toggle" aria-pressed="true">水路图</button><button type="button" data-view="field" aria-pressed="false" disabled>田块</button><button type="button" data-view="outlet" aria-pressed="false" disabled>出口</button><button type="button" data-view="machine" aria-pressed="false" disabled>主机</button><button type="button" data-view="valve" aria-pressed="false" disabled>阀组</button></div>
       </div>
-      <div class="scene-viewport" id="scene-viewport"><img class="poster" src="./field-poster.webp" alt="本田低位量水段、近口阀组与留样主机"><span class="scene-legend" id="scene-state" hidden></span><span class="scene-help" id="scene-help">三维场景加载中</span><button class="button reset-view" id="reset-view" type="button" hidden>复位视角</button></div>
+      <div class="scene-viewport" id="scene-viewport" data-engineering="true">
+        <div class="engineering-sheet">
+          <img src="./engineering-flow.svg?v=purification-1" alt="田块低位出口先测流，再分支取原水样；主流监测、调蓄、分批净化、复测、待检，核验后排放">
+          <button class="button sheet-zoom" id="sheet-zoom" type="button" aria-haspopup="dialog" aria-controls="engineering-dialog">查看工程图</button>
+        </div>
+        <img class="poster" src="./field-poster.webp" alt="本田低位量水段、近口阀组与留样主机"><span class="scene-legend" id="scene-state" hidden></span><span class="scene-help" id="scene-help">三维场景加载中</span><button class="button reset-view" id="reset-view" type="button" hidden>复位视角</button>
+      </div>
       <div class="process" aria-label="留样阶段">
         <div class="process-head">
           <h3>采样流程</h3>
@@ -37,14 +44,46 @@
         <div class="steps" id="steps" role="group" aria-label="切换三维采样阶段"></div>
       </div>
     </section>
-      <section class="surface trend" aria-labelledby="trend-title">
+      <section class="surface trend" id="monitor-card" data-mode="water" aria-labelledby="trend-title">
         <div class="section-head">
-          <div class="section-title"><span class="section-number" aria-hidden="true">02</span><h2 id="trend-title">本田出流监测</h2></div>
+          <div class="section-title"><span class="section-number" aria-hidden="true">02</span><h2 id="trend-title">田块监测</h2></div>
+          <div class="view-switch monitor-switch" role="group" aria-label="切换监测面板"><button type="button" data-monitor-tab="water" aria-pressed="true" aria-controls="water-panel">水质与放行</button><button type="button" data-monitor-tab="flow" aria-pressed="false" aria-controls="flow-metrics">雨量与出流</button></div>
+        </div>
+        <section class="water-panel" id="water-panel" aria-label="水质与排放状态">
+          <div class="water-head">
+            <div><span class="water-kicker">当前状态</span><strong id="water-state">—</strong></div>
+            <span class="valve-status">排放阀 V2 <b id="water-valve">—</b></span>
+            <button class="button" id="treatment-rules" type="button" aria-haspopup="dialog" aria-controls="treatment-dialog">联锁条件</button>
+          </div>
+          <ol id="purification-steps" class="purification-steps" aria-label="净化流程"></ol>
+          <p class="treatment-description" id="treatment-description"></p>
+          <div class="quality-grid">
+            <table>
+              <caption>在线水质与批次对照</caption>
+              <thead><tr><th scope="col">指标</th><th scope="col">实时来水</th><th scope="col">本批进水</th><th scope="col">本批出水</th><th scope="col">触发值</th></tr></thead>
+              <tbody>
+                <tr><th scope="row"><span id="test-ntu"></span> <small id="unit-ntu"></small></th><td id="raw-ntu">—</td><td id="batch-ntu">—</td><td id="clean-ntu">—</td><td id="threshold-ntu">—</td></tr>
+                <tr><th scope="row"><span id="test-no3"></span> <small id="unit-no3"></small></th><td id="raw-no3">—</td><td id="batch-no3">—</td><td id="clean-no3">—</td><td id="threshold-no3">—</td></tr>
+                <tr><th scope="row"><span id="test-po4"></span> <small id="unit-po4"></small></th><td id="raw-po4">—</td><td id="batch-po4">—</td><td id="clean-po4">—</td><td id="threshold-po4">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <dl class="water-totals" aria-label="调蓄和处理水量">
+            <div><dt>调蓄余水</dt><dd id="water-stored">—</dd></div>
+            <div><dt>累计净化进水</dt><dd id="water-processed">—</dd></div>
+            <div><dt>累计排放</dt><dd id="water-discharged">—</dd></div>
+            <div><dt>处理批次</dt><dd id="water-batch">—</dd></div>
+          </dl>
+          <div class="review-demo" id="review-demo" hidden>
+            <strong id="review-label">雨后核验</strong>
+            <div class="view-switch" role="group" aria-label="雨后核验流程演示"><button type="button" data-review="pending" aria-pressed="true">待检</button><button type="button" data-review="approved" aria-pressed="false">通过</button><button type="button" data-review="fault" aria-pressed="false">未通过</button></div>
+          </div>
+        </section>
+        <div class="flow-metrics" id="flow-metrics">
           <div class="trend-actions">
             <span class="stamp" id="timestamp">—</span>
             <button class="button" id="flow-rule" type="button" aria-haspopup="dialog" aria-controls="flow-dialog">启泵条件</button>
           </div>
-        </div>
         <div class="metrics" aria-label="事件摘要">
           <div><span>累计降雨</span><strong id="rain">—</strong><small>mm</small></div>
           <div><span>瞬时流量</span><strong id="flow">—</strong><small>L/s</small></div>
@@ -74,6 +113,7 @@
           <div><span>截至当前峰值</span><strong id="peak-flow">—</strong></div>
           <div><span>已有样品的瓶位</span><strong id="filled-count">—</strong></div>
         </div>
+        </div>
         <div class="timeline" id="timeline">
           <button class="button primary" id="play" type="button">回放事件</button>
           <input type="range" id="seek" aria-label="事件时段" min="0" max="0" value="0">
@@ -84,7 +124,7 @@
       </section>
       <section class="surface sample" aria-labelledby="sample-heading">
         <div class="section-head">
-          <div class="section-title"><span class="section-number" aria-hidden="true">03</span><h2 id="sample-heading">分瓶留样与检测</h2></div>
+          <div class="section-title"><span class="section-number" aria-hidden="true">03</span><h2 id="sample-heading">净化前留样与化验</h2></div>
           <button class="button" id="csv" type="button">导出 CSV</button>
         </div>
         <div class="bottle-grid" id="bottles" role="group" aria-label="选择样瓶查看化验结果">
@@ -94,7 +134,7 @@
         </div>
         <div class="sample-output">
           <div class="subhead readout-head">
-            <h3 id="results-heading" tabindex="-1">合格区间输出量</h3>
+            <h3 id="results-heading" tabindex="-1">净化前代表区间负荷</h3>
             <h3 id="sample-title" hidden>样瓶明细</h3>
             <span class="stamp" id="coverage">—</span>
             <div class="sample-actions" id="sample-actions" hidden>
@@ -155,6 +195,28 @@
     <dt>停采条件</dt><dd>回水、超量程或水位无效时停采并标记</dd>
   </dl>
   <p class="rule-readout" id="flow-condition"></p>
+</dialog>
+<dialog class="detail-dialog treatment-dialog" id="treatment-dialog" aria-labelledby="treatment-rule-title">
+  <header class="dialog-head">
+    <h2 id="treatment-rule-title">净化与排放联锁</h2>
+    <form method="dialog"><button class="button" type="submit" autofocus>关闭</button></form>
+  </header>
+  <dl class="flow-rules">
+    <dt>启动净化</dt><dd>在线指标连续有效越限且原水量足够，确认阀位、液位和压差后送水。面板的触发值用于台架调试。</dd>
+    <dt>待检复核</dt><dd>正磷酸盐磷和硝态氮用于过程监测。每批出水留取独立样品，核对总氮、总磷及现场约定项目。</dd>
+    <dt>排放许可</dt><dd>批次化验经审核、复测有效，且现场同意排放，控制器才开启常闭阀 V2。</dd>
+    <dt>异常隔离</dt><dd>复核不通过时留存该批。失电、高液位、堵塞或反馈异常时停泵关阀，并触发现场告警。</dd>
+  </dl>
+</dialog>
+<dialog class="detail-dialog engineering-dialog" id="engineering-dialog" aria-labelledby="engineering-title">
+  <header class="dialog-head">
+    <h2 id="engineering-title">水路与净化模块工程图</h2>
+    <form method="dialog"><button class="button" type="submit" autofocus>关闭</button></form>
+  </header>
+  <div class="drawing-scroll" tabindex="0" aria-label="工程图，可滚动查看">
+    <img src="./engineering-flow.svg?v=purification-1" alt="系统总水路：监测、留样、调蓄、净化、复测和许可排放">
+    <img src="./engineering-filter.svg?v=purification-1" alt="沉降粗滤、氨氮试验床、除磷试验床、出水复测和待检箱的工程剖视图">
+  </div>
 </dialog>
 </body>
 </html>
